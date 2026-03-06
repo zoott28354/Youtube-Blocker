@@ -89,7 +89,7 @@ fn expand_domain(input: &str) -> Vec<String> {
         .trim_start_matches("m.")
         .to_string();
 
-    if domain.is_empty() {
+    if domain.is_empty() || !domain.contains('.') {
         return vec![];
     }
 

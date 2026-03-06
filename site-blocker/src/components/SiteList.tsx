@@ -57,7 +57,7 @@ export default function SiteList({ sites, onAdd, onRemove }: Props) {
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="es. tiktok.com"
+          placeholder="es. netflix.com (con .com)"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
