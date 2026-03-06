@@ -52,6 +52,13 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
         )}
       </div>
 
+      {/* Avviso riavvio browser */}
+      {isBlocked && (
+        <p className="text-xs text-yellow-500/80 text-center -mt-1">
+          Riavvia i browser già aperti per applicare il blocco subito.
+        </p>
+      )}
+
       {/* Bottoni azione */}
       <div className="flex gap-4">
         <button
