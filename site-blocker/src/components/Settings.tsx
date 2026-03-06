@@ -51,7 +51,7 @@ export default function Settings({ onChangePin, onResetPin }: Props) {
   };
 
   return (
-    <div className="space-y-6 max-w-sm">
+    <div className="space-y-6">
       <div>
         <h2 className="text-base font-bold text-gray-100">{t.settingsTitle}</h2>
         <p className="text-xs text-gray-400 mt-0.5">{t.settingsHint}</p>
