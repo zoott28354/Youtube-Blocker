@@ -7,7 +7,7 @@ mod firewall;
 mod hosts;
 
 use auth::{hash_pin, verify_pin};
-use browsers::{are_policies_active, disable_browser_doh, enable_browser_doh, kill_browsers};
+use browsers::{are_policies_active, disable_browser_doh, enable_browser_doh};
 use config::{load_config, save_config, AppConfig};
 use firewall::{add_firewall_rules, are_rules_active, remove_firewall_rules};
 use hosts::{block_sites, is_blocked, unblock_sites};
@@ -130,7 +130,6 @@ fn block_all(state: State<AppState>) -> Result<(), String> {
         add_firewall_rules().map_err(|e| e.to_string())?;
         disable_browser_doh();
     }
-    kill_browsers();
     Ok(())
 }
 

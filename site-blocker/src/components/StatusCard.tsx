@@ -45,12 +45,6 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
         )}
       </div>
 
-      {/* Avviso browser chiusi */}
-      {isBlocked && (
-        <p className="text-xs text-yellow-500/80 text-center -mt-1">
-          I browser sono stati chiusi per azzerare la cache DNS.
-        </p>
-      )}
 
       {/* Bottoni azione */}
       <div className="flex gap-4 mb-2">
