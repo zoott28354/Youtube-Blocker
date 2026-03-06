@@ -48,6 +48,39 @@ pub fn kill_browsers() {
     }
 }
 
+/// Verifica se almeno una policy browser è attiva (Chrome/Edge o Firefox).
+pub fn are_policies_active() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        // Controlla la chiave Chrome come campione
+        let output = Command::new("reg")
+            .args([
+                "query",
+                CHROMIUM_POLICY_KEYS[0],
+                "/v",
+                "DnsOverHttpsMode",
+            ])
+            .output();
+        if let Ok(o) = output {
+            if String::from_utf8_lossy(&o.stdout).contains("off") {
+                return true;
+            }
+        }
+        // Controlla Firefox policies.json
+        if let Some(dist_dir) = firefox_dist_dir() {
+            let policy_path = dist_dir.join("policies.json");
+            if let Ok(content) = std::fs::read_to_string(&policy_path) {
+                if content.contains(SITEBLOCKER_MARKER) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+    #[cfg(not(target_os = "windows"))]
+    false
+}
+
 /// Disabilita DoH in Chrome, Edge, Brave e Firefox.
 /// Chiamato durante il blocco (se block_doh è abilitato).
 pub fn disable_browser_doh() {

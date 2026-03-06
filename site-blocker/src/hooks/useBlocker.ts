@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 export interface BlockStatus {
   hosts_blocked: boolean;
   firewall_active: boolean;
+  browser_policy: boolean;
 }
 
 export function useBlocker() {

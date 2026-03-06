@@ -30,25 +30,18 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
 
         {status && (
           <div className="flex justify-center gap-4 text-xs text-gray-400 mt-1">
-            <span>
-              <span
-                className={status.hosts_blocked ? "text-red-400" : "text-gray-500"}
-              >
-                ●
-              </span>{" "}
-              Hosts
-            </span>
-            <span>
-              <span
-                className={
-                  status.firewall_active ? "text-red-400" : "text-gray-500"
-                }
-              >
-                ●
-              </span>{" "}
-              Firewall DoH
-            </span>
-          </div>
+            {(
+              [
+                ["Hosts", status.hosts_blocked],
+                ["Firewall DoH", status.firewall_active],
+                ["Policy browser", status.browser_policy],
+              ] as [string, boolean][]
+            ).map(([label, active]) => (
+              <span key={label}>
+                <span className={active ? "text-red-400" : "text-gray-500"}>●</span>{" "}
+                {label}
+              </span>
+            ))}</div>
         )}
       </div>
 
