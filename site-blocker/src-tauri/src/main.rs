@@ -165,6 +165,13 @@ fn set_pin(pin: String, state: State<AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn reset_pin(state: State<AppState>) -> Result<(), String> {
+    let mut cfg = state.0.lock().unwrap();
+    cfg.pin_hash = None;
+    save_config(&cfg).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn change_pin(old_pin: String, new_pin: String, state: State<AppState>) -> Result<(), String> {
     if new_pin.len() < 4 {
         return Err("Il PIN deve avere almeno 4 caratteri".into());
@@ -200,6 +207,7 @@ fn main() {
             has_pin,
             set_pin,
             change_pin,
+            reset_pin,
         ])
         .run(tauri::generate_context!())
         .expect("Errore avvio applicazione Tauri");

@@ -1,10 +1,10 @@
-# SiteBlocker — Contesto per Claude
+# YouTube Blocker — Contesto per Claude
 
 ## Cosa fa questo progetto
 App desktop Tauri 2 per bloccare siti a livello di sistema su Windows.
 Usecase principale: genitore blocca YouTube (e altri siti) per un figlio di 11 anni.
-Blocca tramite file `hosts` + regole Windows Firewall anti-DoH.
-PIN argon2id richiesto per sbloccare.
+Tre livelli di blocco: file `hosts` + regole Windows Firewall anti-DoH + Group Policy browser.
+PIN argon2id richiesto per sbloccare. Interfaccia bilingue IT/EN.
 
 ## Stack
 - Tauri 2.x + React + TypeScript + Tailwind CSS
@@ -19,8 +19,10 @@ PIN argon2id richiesto per sbloccare.
 | `src-tauri/src/auth.rs` | hash_pin / verify_pin con argon2id |
 | `src-tauri/src/hosts.rs` | Lettura/scrittura file hosts + flush DNS multipiattaforma |
 | `src-tauri/src/firewall.rs` | Regole netsh outbound TCP verso DoH su porte 443 e 853 |
+| `src-tauri/src/browsers.rs` | Group Policy DoH per Chrome/Edge/Brave (registry) e Firefox (policies.json) |
+| `src/i18n.tsx` | Traduzioni IT/EN, LangProvider context, useI18n hook |
 | `src/hooks/useBlocker.ts` | Stato React centralizzato, tutti gli invoke Tauri |
-| `src/App.tsx` | Routing tab, flusso primo avvio (setup PIN) |
+| `src/App.tsx` | Routing tab, flusso primo avvio (setup PIN), toggle lingua |
 
 ## Decisioni architetturali importanti
 
@@ -41,45 +43,68 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 - Remove-before-add: idempotente, sicuro chiamare più volte
 - Solo TCP (DoH su QUIC/UDP porta 443 non bloccato — possibile v2)
 
+### Browser DoH (browsers.rs)
+- Chrome/Edge/Brave: chiave registry `HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"`
+- Firefox: crea `distribution/policies.json` nella cartella di installazione con backup/restore
+- Marker `"_siteblocker":true` nel JSON per identificare i file creati da noi
+- are_policies_active() controlla Chrome come campione + presenza del nostro JSON Firefox
+
+### Espansione domini
+- Input utente normalizzato: strip https://, www., m., path → root domain
+- Espansione automatica: root → root + www.root + m.root
+- Validazione: rifiutato se il dominio non contiene un punto (es. "netflix" senza TLD)
+- Rimozione: usa HashSet per rimuovere root + tutte le varianti in un'operazione
+
 ### PIN
 - argon2id, salt OsRng, hash self-describing (include params + salt nel JSON)
 - Blocco NON richiede PIN. Solo sblocco richiede PIN.
 - Minimo 4 caratteri (validato sia Rust che React)
+- Reset PIN disponibile in Impostazioni (nessun PIN richiesto — chi usa l'app è già admin)
+- Dopo reset: pin_hash = None → al prossimo avvio mostra schermata setup PIN
+
+### i18n
+- Context React in src/i18n.tsx con traduzioni `as const`
+- `type Translations = (typeof translations)[Lang]` per evitare errori di tipo con union
+- Lingua persistita in localStorage. Default: "it"
+- Toggle ITA/ENG in header (pill style)
 
 ### Config
 - `pin_hash: Option<String>` — None = primo avvio, mostra setup PIN
-- `block_doh: bool` — default true, toggle in Settings (da implementare)
+- `block_doh: bool` — default true
 
 ## Comandi Tauri disponibili
 ```
-get_status()             → { hosts_blocked, firewall_active }
+get_status()             → { hosts_blocked, firewall_active, browser_policy }
 get_sites()              → Vec<String>
-add_site(domain)         → Result<()>
-remove_site(domain)      → Result<()>
+add_site(domain)         → Result<()>   // espande automaticamente www/m varianti
+remove_site(domain)      → Result<()>   // rimuove root + varianti
 block_all()              → Result<()>   // no PIN
 unblock_all(pin)         → Result<()>   // PIN obbligatorio
 has_pin()                → bool
 set_pin(pin)             → Result<()>
 change_pin(old, new)     → Result<()>
+reset_pin()              → Result<()>   // azzera pin_hash → None
 ```
+
+## Preferenze utente
+- NON includere "Co-Authored-By: Claude Sonnet 4.6" nei commit
 
 ## Roadmap / Feature future
 - **Game Timer**: integrazione con un timer di gioco che blocca/sblocca automaticamente
 - **Schedule**: blocco automatico per fascia oraria (es. 15:00-18:00 studio)
 - **System tray**: toggle rapido senza aprire la finestra principale
 - **Profili**: set di regole nominati (Studio, Lavoro, Weekend)
-- **Mac/Linux**: hosts_path() già cross-platform; manca firewall (pfctl / iptables) e admin elevation (pkexec / sudo)
-- **Toggle block_doh**: UI per abilitare/disabilitare le regole firewall separatamente dagli hosts
+- **Mac/Linux**: hosts_path() già cross-platform; manca firewall (pfctl / iptables) e admin elevation
+- **Toggle block_doh**: UI per abilitare/disabilitare firewall+policy separatamente dagli hosts
 
 ## Gotcha e bug noti risolti
 - `tauri_build::Builder` non esiste in v2 → usare `tauri_build::build()`
 - `requestedExecutionLevel` in tauri.conf.json non supportato da tauri-build 2.5.x
 - `winres` in build.rs conflicta con tauri-build → rimosso
 - ICO icon richiesta per build su Windows → generata con System.Drawing
-- `ttk.Label` in Python non supporta foreground con tema vista → usare `tk.Label`
-- PowerShell: `Is-YoutubeBlocked` usava `-SimpleMatch` con pattern regex → rimosso
-- PowerShell: `Unblock-Youtube` usava `-not` su array (ForEach-Object) → Where-Object
-- PowerShell: `MessageBox.Show` parametri invertiti (buttons/icon) → enum tipizzati
+- Hosts file svuotato su unblock → bug risolto con HashSet di righe esatte (non match parziale)
+- `type Translations = typeof translations.it` causa errore TS con union → usare `(typeof translations)[Lang]`
+- PowerShell script con $vars in `-Command` vengono strippati → scrivere script su file .ps1 e usare `-File`
 
 ## Come fare la build
 ```bash

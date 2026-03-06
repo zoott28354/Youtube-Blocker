@@ -92,6 +92,11 @@ export function useBlocker() {
     [refresh]
   );
 
+  const resetPin = useCallback(async () => {
+    await invoke("reset_pin");
+    await refresh();
+  }, [refresh]);
+
   return {
     status,
     sites,
@@ -104,6 +109,7 @@ export function useBlocker() {
     removeSite,
     setPin,
     changePin,
+    resetPin,
     refresh,
   };
 }

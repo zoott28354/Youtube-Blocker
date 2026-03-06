@@ -109,7 +109,7 @@ export default function App() {
           />
         )}
         {tab === "settings" && (
-          <Settings onChangePin={blocker.changePin} />
+          <Settings onChangePin={blocker.changePin} onResetPin={blocker.resetPin} />
         )}
       </main>
 

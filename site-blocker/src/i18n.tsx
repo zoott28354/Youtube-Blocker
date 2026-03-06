@@ -46,6 +46,12 @@ export const translations = {
     pinCurrentWrong: "PIN attuale errato",
     pinUpdated: "PIN aggiornato con successo.",
     updatePinBtn: "Aggiorna PIN",
+    // Reset PIN
+    resetPinTitle: "Reset PIN",
+    resetPinHint: "Rimuove il PIN attuale. Al prossimo avvio verrà richiesto di impostarne uno nuovo.",
+    resetPinBtn: "Reset PIN",
+    resetPinConfirm: "Sei sicuro? Il PIN verrà rimosso.",
+    resetPinDone: "PIN rimosso. Riavvia l'app per impostarne uno nuovo.",
   },
   en: {
     title: "YouTube Blocker",
@@ -90,6 +96,12 @@ export const translations = {
     pinCurrentWrong: "Current PIN is incorrect",
     pinUpdated: "PIN updated successfully.",
     updatePinBtn: "Update PIN",
+    // Reset PIN
+    resetPinTitle: "Reset PIN",
+    resetPinHint: "Removes the current PIN. You will be prompted to set a new one on next launch.",
+    resetPinBtn: "Reset PIN",
+    resetPinConfirm: "Are you sure? The PIN will be removed.",
+    resetPinDone: "PIN removed. Restart the app to set a new one.",
   },
 } as const;
 

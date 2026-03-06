@@ -3,9 +3,10 @@ import { useI18n } from "../i18n";
 
 interface Props {
   onChangePin: (oldPin: string, newPin: string) => Promise<void>;
+  onResetPin: () => Promise<void>;
 }
 
-export default function Settings({ onChangePin }: Props) {
+export default function Settings({ onChangePin, onResetPin }: Props) {
   const { t } = useI18n();
   const [oldPin, setOldPin] = useState("");
   const [newPin, setNewPin] = useState("");
@@ -13,6 +14,9 @@ export default function Settings({ onChangePin }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
 
   const handleChange = async () => {
     setError(null);
@@ -40,6 +44,12 @@ export default function Settings({ onChangePin }: Props) {
     }
   };
 
+  const handleReset = async () => {
+    await onResetPin();
+    setConfirmReset(false);
+    setResetDone(true);
+  };
+
   return (
     <div className="space-y-6 max-w-sm">
       <div>
@@ -47,6 +57,7 @@ export default function Settings({ onChangePin }: Props) {
         <p className="text-xs text-gray-400 mt-0.5">{t.settingsHint}</p>
       </div>
 
+      {/* Cambia PIN */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
         <h3 className="font-semibold text-gray-200 text-sm">{t.changePinTitle}</h3>
 
@@ -78,6 +89,44 @@ export default function Settings({ onChangePin }: Props) {
         >
           {submitting ? "..." : t.updatePinBtn}
         </button>
+      </div>
+
+      {/* Reset PIN */}
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
+        <h3 className="font-semibold text-gray-200 text-sm">{t.resetPinTitle}</h3>
+        <p className="text-xs text-gray-400">{t.resetPinHint}</p>
+
+        {resetDone ? (
+          <p className="text-green-400 text-xs">{t.resetPinDone}</p>
+        ) : confirmReset ? (
+          <div className="space-y-2">
+            <p className="text-yellow-400 text-xs font-medium">{t.resetPinConfirm}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="flex-1 py-2 rounded-xl bg-gray-700 hover:bg-gray-600
+                  text-sm font-medium transition-colors"
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={handleReset}
+                className="flex-1 py-2 rounded-xl bg-red-700 hover:bg-red-600
+                  text-sm font-semibold transition-colors"
+              >
+                {t.resetPinBtn}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmReset(true)}
+            className="w-full py-2.5 bg-gray-700 hover:bg-gray-600 border border-gray-600
+              rounded-xl font-semibold text-sm text-red-400 hover:text-red-300 transition-colors"
+          >
+            {t.resetPinBtn}
+          </button>
+        )}
       </div>
     </div>
   );
