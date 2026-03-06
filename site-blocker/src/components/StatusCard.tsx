@@ -53,7 +53,7 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
       )}
 
       {/* Bottoni azione */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 mb-2">
         <button
           onClick={onBlock}
           disabled={loading || isBlocked}
@@ -74,6 +74,18 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
         >
           {loading && !isBlocked ? "..." : "🔓  Sblocca"}
         </button>
+      </div>
+      {/* Icona decorativa */}
+      <div className="flex justify-center pt-2">
+        <img
+          src="/icon.png"
+          alt=""
+          className={`w-32 h-32 transition-all duration-500 ${
+            isBlocked
+              ? "opacity-100 drop-shadow-[0_0_24px_rgba(248,113,113,0.5)]"
+              : "opacity-20 grayscale"
+          }`}
+        />
       </div>
     </div>
   );
