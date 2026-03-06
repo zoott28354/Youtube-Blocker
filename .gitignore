@@ -1,0 +1,16 @@
+# Rust / Tauri
+site-blocker/src-tauri/target/
+
+# Node
+site-blocker/node_modules/
+site-blocker/dist/
+
+# Vite
+site-blocker/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
