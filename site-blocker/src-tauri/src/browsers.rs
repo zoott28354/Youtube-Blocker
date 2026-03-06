@@ -24,7 +24,29 @@ const SITEBLOCKER_MARKER: &str = "\"_siteblocker\":true";
 const FIREFOX_POLICY_JSON: &str =
     r#"{"policies":{"DNSOverHTTPS":{"Enabled":false,"Locked":true}},"_siteblocker":true}"#;
 
+/// Nomi dei processi browser da terminare al blocco.
+const BROWSER_PROCESSES: &[&str] = &[
+    "chrome.exe",
+    "firefox.exe",
+    "msedge.exe",
+    "brave.exe",
+    "opera.exe",
+    "vivaldi.exe",
+];
+
 // ─── API pubblica ────────────────────────────────────────────────────────────
+
+/// Termina forzatamente tutti i processi browser noti.
+/// Necessario per svuotare la cache DNS in-memory del browser,
+/// che altrimenti permette di raggiungere siti già visitati ignorando il file hosts.
+pub fn kill_browsers() {
+    #[cfg(target_os = "windows")]
+    for &process in BROWSER_PROCESSES {
+        let _ = Command::new("taskkill")
+            .args(["/F", "/IM", process])
+            .output();
+    }
+}
 
 /// Disabilita DoH in Chrome, Edge, Brave e Firefox.
 /// Chiamato durante il blocco (se block_doh è abilitato).

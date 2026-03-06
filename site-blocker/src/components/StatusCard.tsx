@@ -52,10 +52,10 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
         )}
       </div>
 
-      {/* Avviso riavvio browser */}
+      {/* Avviso browser chiusi */}
       {isBlocked && (
         <p className="text-xs text-yellow-500/80 text-center -mt-1">
-          Riavvia i browser già aperti per applicare il blocco subito.
+          I browser sono stati chiusi per azzerare la cache DNS.
         </p>
       )}
 
