@@ -1,4 +1,5 @@
-# SiteBlocker
+# YouTube Blocker
+### *...and other sites you want to block*
 
 App desktop per bloccare siti a livello di sistema su Windows (Mac/Linux in roadmap).
 Modifica il file `hosts` + regole Windows Firewall per bloccare i resolver DNS-over-HTTPS, rendendo il blocco resistente ai browser moderni (Chrome, Firefox, Edge).
