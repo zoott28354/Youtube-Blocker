@@ -29,6 +29,8 @@ impl Default for AppConfig {
                 "www.youtube.com".into(),
                 "m.youtube.com".into(),
                 "youtu.be".into(),
+                "www.youtu.be".into(),
+                "m.youtu.be".into(),
             ],
             pin_hash: None,
             block_doh: true,

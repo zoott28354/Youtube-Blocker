@@ -72,24 +72,52 @@ fn get_sites(state: State<AppState>) -> Vec<String> {
     state.0.lock().unwrap().sites.clone()
 }
 
+/// Normalizza l'input e restituisce root + varianti www/m.
+/// Es. "https://www.netflix.com/it" → ["netflix.com", "www.netflix.com", "m.netflix.com"]
+fn expand_domain(input: &str) -> Vec<String> {
+    let domain = input
+        .trim()
+        .to_lowercase()
+        .trim_start_matches("https://")
+        .trim_start_matches("http://")
+        .split('/')
+        .next()
+        .unwrap_or("")
+        .trim_start_matches("www.")
+        .trim_start_matches("m.")
+        .to_string();
+
+    if domain.is_empty() {
+        return vec![];
+    }
+
+    vec![
+        domain.clone(),
+        format!("www.{}", domain),
+        format!("m.{}", domain),
+    ]
+}
+
 #[tauri::command]
 fn add_site(domain: String, state: State<AppState>) -> Result<(), String> {
     let mut cfg = state.0.lock().unwrap();
-    let domain = domain.trim().to_lowercase();
-    if domain.is_empty() {
+    let variants = expand_domain(&domain);
+    if variants.is_empty() {
         return Err("Dominio non valido".into());
     }
-    if !cfg.sites.contains(&domain) {
-        cfg.sites.push(domain);
-        save_config(&cfg).map_err(|e| e.to_string())?;
+    for variant in variants {
+        if !cfg.sites.contains(&variant) {
+            cfg.sites.push(variant);
+        }
     }
-    Ok(())
+    save_config(&cfg).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn remove_site(domain: String, state: State<AppState>) -> Result<(), String> {
     let mut cfg = state.0.lock().unwrap();
-    cfg.sites.retain(|s| s != &domain);
+    let to_remove: std::collections::HashSet<String> = expand_domain(&domain).into_iter().collect();
+    cfg.sites.retain(|s| !to_remove.contains(s));
     save_config(&cfg).map_err(|e| e.to_string())
 }
 
