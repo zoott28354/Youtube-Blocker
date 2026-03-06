@@ -80,7 +80,7 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
         <img
           src="/icon.png"
           alt=""
-          className={`w-32 h-32 transition-all duration-500 ${
+          className={`w-40 h-40 transition-all duration-500 ${
             isBlocked
               ? "opacity-100 drop-shadow-[0_0_24px_rgba(248,113,113,0.5)]"
               : "opacity-20 grayscale"
