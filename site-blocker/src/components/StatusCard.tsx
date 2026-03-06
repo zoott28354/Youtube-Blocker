@@ -1,4 +1,5 @@
 import { BlockStatus } from "../hooks/useBlocker";
+import { useI18n } from "../i18n";
 
 interface Props {
   status: BlockStatus | null;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function StatusCard({ status, loading, onBlock, onUnblock }: Props) {
+  const { t } = useI18n();
   const isBlocked = status?.hosts_blocked ?? false;
 
   return (
@@ -25,16 +27,16 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
             isBlocked ? "text-red-400" : "text-green-400"
           }`}
         >
-          {isBlocked ? "BLOCCATO" : "SBLOCCATO"}
+          {isBlocked ? t.blocked : t.unblocked}
         </div>
 
         {status && (
           <div className="flex justify-center gap-4 text-xs text-gray-400 mt-1">
             {(
               [
-                ["Hosts", status.hosts_blocked],
-                ["Firewall DoH", status.firewall_active],
-                ["Policy browser", status.browser_policy],
+                [t.hosts, status.hosts_blocked],
+                [t.firewallDoh, status.firewall_active],
+                [t.policyBrowser, status.browser_policy],
               ] as [string, boolean][]
             ).map(([label, active]) => (
               <span key={label}>
@@ -56,7 +58,7 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
             disabled:opacity-40 disabled:cursor-not-allowed
             transition-colors"
         >
-          {loading && isBlocked ? "..." : "🔒  Blocca"}
+          {loading && isBlocked ? "..." : t.blockBtn}
         </button>
         <button
           onClick={onUnblock}
@@ -66,7 +68,7 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
             disabled:opacity-40 disabled:cursor-not-allowed
             transition-colors"
         >
-          {loading && !isBlocked ? "..." : "🔓  Sblocca"}
+          {loading && !isBlocked ? "..." : t.unblockBtn}
         </button>
       </div>
       {/* Icona decorativa */}

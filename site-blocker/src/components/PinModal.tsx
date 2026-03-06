@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useI18n } from "../i18n";
 
 interface Props {
   mode: "setup" | "verify";
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function PinModal({ mode, onConfirm, onCancel }: Props) {
+  const { t } = useI18n();
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20,11 +22,11 @@ export default function PinModal({ mode, onConfirm, onCancel }: Props) {
   const handleSubmit = async () => {
     setError(null);
     if (pin.length < 4) {
-      setError("Il PIN deve avere almeno 4 caratteri");
+      setError(t.pinTooShort);
       return;
     }
     if (mode === "setup" && pin !== confirm) {
-      setError("I PIN non coincidono");
+      setError(t.pinMismatch);
       return;
     }
     setSubmitting(true);
@@ -32,7 +34,7 @@ export default function PinModal({ mode, onConfirm, onCancel }: Props) {
       await onConfirm(pin);
     } catch (e) {
       const msg = String(e);
-      setError(msg.includes("PIN errato") ? "PIN errato" : msg);
+      setError(msg.includes("PIN errato") || msg.includes("Wrong PIN") ? t.pinWrong : msg);
       setPin("");
       if (mode === "verify") setConfirm("");
     } finally {
@@ -43,12 +45,10 @@ export default function PinModal({ mode, onConfirm, onCancel }: Props) {
   const inner = (
     <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-xs shadow-2xl">
       <h2 className="text-lg font-bold mb-1">
-        {mode === "setup" ? "Imposta PIN genitore" : "PIN richiesto"}
+        {mode === "setup" ? t.pinSetupTitle : t.pinVerifyTitle}
       </h2>
       <p className="text-sm text-gray-400 mb-4">
-        {mode === "setup"
-          ? "Questo PIN sarà richiesto per sbloccare i siti."
-          : "Inserisci il PIN per sbloccare."}
+        {mode === "setup" ? t.pinSetupHint : t.pinVerifyHint}
       </p>
 
       <input
@@ -68,7 +68,7 @@ export default function PinModal({ mode, onConfirm, onCancel }: Props) {
         <input
           type="password"
           inputMode="numeric"
-          placeholder="Conferma PIN"
+          placeholder={t.pinConfirmPlaceholder}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -92,7 +92,7 @@ export default function PinModal({ mode, onConfirm, onCancel }: Props) {
             className="flex-1 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600
               disabled:opacity-50 font-medium transition-colors"
           >
-            Annulla
+            {t.cancel}
           </button>
         )}
         <button
@@ -101,7 +101,7 @@ export default function PinModal({ mode, onConfirm, onCancel }: Props) {
           className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500
             disabled:opacity-50 font-semibold transition-colors"
         >
-          {submitting ? "..." : mode === "setup" ? "Imposta" : "Sblocca"}
+          {submitting ? "..." : mode === "setup" ? t.pinSetupBtn : t.pinUnlockBtn}
         </button>
       </div>
     </div>

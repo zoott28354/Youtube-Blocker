@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "../i18n";
 
 interface Props {
   sites: string[];
@@ -26,6 +27,7 @@ function groupByRoot(sites: string[]): { root: string; variants: string[] }[] {
 const YOUTUBE_DEFAULTS = ["youtube.com", "youtu.be"];
 
 export default function SiteList({ sites, onAdd, onRemove }: Props) {
+  const { t } = useI18n();
   const [input, setInput] = useState("");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,16 +59,14 @@ export default function SiteList({ sites, onAdd, onRemove }: Props) {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h2 className="text-base font-bold text-gray-100">Siti bloccati</h2>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Modifiche attive al prossimo blocco. Le varianti www e m. vengono aggiunte automaticamente.
-          </p>
+          <h2 className="text-base font-bold text-gray-100">{t.sitesTitle}</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{t.sitesHint}</p>
         </div>
         <button
           onClick={handleAddDefaults}
           className="shrink-0 text-xs text-blue-400 hover:text-blue-300 transition-colors mt-0.5"
         >
-          + YouTube predefiniti
+          {t.addDefaults}
         </button>
       </div>
 
@@ -74,7 +74,7 @@ export default function SiteList({ sites, onAdd, onRemove }: Props) {
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="es. netflix.com (con .com)"
+          placeholder={t.addPlaceholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -87,7 +87,7 @@ export default function SiteList({ sites, onAdd, onRemove }: Props) {
           className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl
             disabled:opacity-50 text-sm font-semibold transition-colors"
         >
-          Aggiungi
+          {t.addBtn}
         </button>
       </div>
 
@@ -121,13 +121,13 @@ export default function SiteList({ sites, onAdd, onRemove }: Props) {
               className="ml-4 shrink-0 text-gray-500 hover:text-red-400 text-xs font-medium
                 opacity-0 group-hover:opacity-100 transition-all"
             >
-              Rimuovi
+              {t.removeBtn}
             </button>
           </li>
         ))}
         {groups.length === 0 && (
           <li className="text-center text-sm text-gray-500 py-6">
-            Nessun sito nella lista.
+            {t.noSites}
           </li>
         )}
       </ul>

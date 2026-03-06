@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useI18n } from "../i18n";
 
 interface Props {
   onChangePin: (oldPin: string, newPin: string) => Promise<void>;
 }
 
 export default function Settings({ onChangePin }: Props) {
+  const { t } = useI18n();
   const [oldPin, setOldPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
@@ -16,11 +18,11 @@ export default function Settings({ onChangePin }: Props) {
     setError(null);
     setSuccess(false);
     if (newPin.length < 4) {
-      setError("Il PIN deve avere almeno 4 caratteri");
+      setError(t.pinTooShort);
       return;
     }
     if (newPin !== confirmPin) {
-      setError("I PIN non coincidono");
+      setError(t.pinMismatch);
       return;
     }
     setSubmitting(true);
@@ -32,7 +34,7 @@ export default function Settings({ onChangePin }: Props) {
       setSuccess(true);
     } catch (e) {
       const msg = String(e);
-      setError(msg.includes("PIN errato") ? "PIN attuale errato" : msg);
+      setError(msg.includes("PIN errato") || msg.includes("Wrong PIN") ? t.pinCurrentWrong : msg);
     } finally {
       setSubmitting(false);
     }
@@ -41,17 +43,17 @@ export default function Settings({ onChangePin }: Props) {
   return (
     <div className="space-y-6 max-w-sm">
       <div>
-        <h2 className="text-base font-bold text-gray-100">Impostazioni</h2>
-        <p className="text-xs text-gray-400 mt-0.5">Gestisci il PIN di sblocco.</p>
+        <h2 className="text-base font-bold text-gray-100">{t.settingsTitle}</h2>
+        <p className="text-xs text-gray-400 mt-0.5">{t.settingsHint}</p>
       </div>
 
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
-        <h3 className="font-semibold text-gray-200 text-sm">Cambia PIN</h3>
+        <h3 className="font-semibold text-gray-200 text-sm">{t.changePinTitle}</h3>
 
         {[
-          { label: "PIN attuale", value: oldPin, set: setOldPin },
-          { label: "Nuovo PIN", value: newPin, set: setNewPin },
-          { label: "Conferma nuovo PIN", value: confirmPin, set: setConfirmPin },
+          { label: t.currentPin, value: oldPin, set: setOldPin },
+          { label: t.newPin, value: newPin, set: setNewPin },
+          { label: t.confirmNewPin, value: confirmPin, set: setConfirmPin },
         ].map(({ label, value, set }) => (
           <input
             key={label}
@@ -66,7 +68,7 @@ export default function Settings({ onChangePin }: Props) {
         ))}
 
         {error && <p className="text-red-400 text-xs">{error}</p>}
-        {success && <p className="text-green-400 text-xs">PIN aggiornato con successo.</p>}
+        {success && <p className="text-green-400 text-xs">{t.pinUpdated}</p>}
 
         <button
           onClick={handleChange}
@@ -74,7 +76,7 @@ export default function Settings({ onChangePin }: Props) {
           className="w-full py-2.5 bg-blue-600 hover:bg-blue-500
             rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors"
         >
-          {submitting ? "..." : "Aggiorna PIN"}
+          {submitting ? "..." : t.updatePinBtn}
         </button>
       </div>
     </div>
