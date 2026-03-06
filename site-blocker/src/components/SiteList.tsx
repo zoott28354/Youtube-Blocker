@@ -22,10 +22,19 @@ function groupByRoot(sites: string[]): { root: string; variants: string[] }[] {
   return Array.from(seen.entries()).map(([root, variants]) => ({ root, variants }));
 }
 
+/** Root domain dei siti YouTube predefiniti (le varianti vengono espanse dal backend). */
+const YOUTUBE_DEFAULTS = ["youtube.com", "youtu.be"];
+
 export default function SiteList({ sites, onAdd, onRemove }: Props) {
   const [input, setInput] = useState("");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleAddDefaults = async () => {
+    for (const domain of YOUTUBE_DEFAULTS) {
+      try { await onAdd(domain); } catch { /* già presente */ }
+    }
+  };
 
   const handleAdd = async () => {
     const domain = input.trim().toLowerCase();
@@ -46,11 +55,19 @@ export default function SiteList({ sites, onAdd, onRemove }: Props) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-bold text-gray-100">Siti bloccati</h2>
-        <p className="text-xs text-gray-400 mt-0.5">
-          Modifiche attive al prossimo blocco. Le varianti www e m. vengono aggiunte automaticamente.
-        </p>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h2 className="text-base font-bold text-gray-100">Siti bloccati</h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Modifiche attive al prossimo blocco. Le varianti www e m. vengono aggiunte automaticamente.
+          </p>
+        </div>
+        <button
+          onClick={handleAddDefaults}
+          className="shrink-0 text-xs text-blue-400 hover:text-blue-300 transition-colors mt-0.5"
+        >
+          + YouTube predefiniti
+        </button>
       </div>
 
       {/* Input aggiunta */}
