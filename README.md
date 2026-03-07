@@ -50,9 +50,9 @@ L'app non deve restare in esecuzione.
 
 ---
 
-## Scripts (cartella `scripts/`)
+## Scripts (cartella `setup/`)
 
-Tutti gli script vanno eseguiti con doppio click dalla cartella `scripts/`.
+Tutti gli script vanno eseguiti con doppio click dalla cartella `setup/`.
 
 | Script | Cosa fa |
 |---|---|
@@ -71,9 +71,9 @@ Tutti gli script vanno eseguiti con doppio click dalla cartella `scripts/`.
 
 ```
 1. Clona il repo
-2. Esegui scripts\setup.bat        → installa npm packages
-3. Esegui scripts\build.bat        → compila tutto (prima volta: 15-30 min)
-   oppure scripts\build_portable.bat
+2. Esegui setup\setup.bat        → installa npm packages
+3. Esegui setup\build.bat        → compila tutto (prima volta: 15-30 min)
+   oppure setup\build_portable.bat
 ```
 
 ### Cartelle generate dalla build (non nel git, eliminabili per liberare spazio)
@@ -112,7 +112,7 @@ Tutti gli script vanno eseguiti con doppio click dalla cartella `scripts/`.
 
 ```
 YouTube-Blocker/
-├── scripts/
+├── setup/
 │   ├── setup.bat
 │   ├── dev.bat
 │   ├── build.bat

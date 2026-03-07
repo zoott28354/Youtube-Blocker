@@ -13,7 +13,7 @@ PIN argon2id richiesto per aprire l'app e per sbloccare. Interfaccia bilingue IT
 ## Struttura repo
 ```
 YouTube-Blocker/
-├── scripts/              — bat file per setup/dev/build/bump_version
+├── setup/              — bat file per setup/dev/build/bump_version
 ├── LICENSE               — MIT, Copyright 2025 zoott28354
 ├── README.md
 ├── CLAUDE.md
@@ -97,9 +97,9 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 - Toggle ITA/ENG in header (pill style)
 
 ### Build e distribuzione
-- Installer NSIS: `scripts/build.bat` → `target/release/bundle/nsis/`
-- Portable exe: `scripts/build_portable.bat` → `YouTubeBlocker_vX.X.X.exe` nella root
-- Bump versione: `scripts/bump_version.bat` → aggiorna tauri.conf.json + Cargo.toml + package.json
+- Installer NSIS: `setup/build.bat` → `target/release/bundle/nsis/`
+- Portable exe: `setup/build_portable.bat` → `YouTubeBlocker_vX.X.X.exe` nella root
+- Bump versione: `setup/bump_version.bat` → aggiorna tauri.conf.json + Cargo.toml + package.json
 - Publisher: zoott28354 | License: MIT | Copyright © 2025 zoott28354
 
 ### Config
@@ -143,7 +143,7 @@ check_pin(pin)           → Result<()>   // solo verifica, nessun side effect (
 
 ## Come fare la build
 ```
-scripts\setup.bat           # prima volta: installa npm packages
-scripts\build.bat           # installer NSIS
-scripts\build_portable.bat  # portable exe
+setup\setup.bat           # prima volta: installa npm packages
+setup\build.bat           # installer NSIS
+setup\build_portable.bat  # portable exe
 ```
