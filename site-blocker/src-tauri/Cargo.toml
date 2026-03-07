@@ -2,6 +2,9 @@
 name = "site-blocker"
 version = "1.0.0"
 edition = "2021"
+authors = ["zoott28354"]
+description = "App per bloccare siti web a livello di sistema su Windows"
+license = "MIT"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
