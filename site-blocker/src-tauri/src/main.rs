@@ -165,6 +165,15 @@ fn set_pin(pin: String, state: State<AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn check_pin(pin: String, state: State<AppState>) -> Result<(), String> {
+    let cfg = state.0.lock().unwrap();
+    match &cfg.pin_hash {
+        Some(hash) => verify_pin(&pin, hash).map_err(|e| e.to_string()),
+        None => Err("Nessun PIN impostato".into()),
+    }
+}
+
+#[tauri::command]
 fn reset_pin(state: State<AppState>) -> Result<(), String> {
     let mut cfg = state.0.lock().unwrap();
     cfg.pin_hash = None;
@@ -208,6 +217,7 @@ fn main() {
             set_pin,
             change_pin,
             reset_pin,
+            check_pin,
         ])
         .run(tauri::generate_context!())
         .expect("Errore avvio applicazione Tauri");

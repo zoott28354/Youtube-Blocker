@@ -11,6 +11,7 @@ export function useBlocker() {
   const [status, setStatus] = useState<BlockStatus | null>(null);
   const [sites, setSites] = useState<string[]>([]);
   const [hasPinSet, setHasPinSet] = useState<boolean | null>(null);
+  const [isSessionUnlocked, setIsSessionUnlocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,13 +95,21 @@ export function useBlocker() {
 
   const resetPin = useCallback(async () => {
     await invoke("reset_pin");
+    setIsSessionUnlocked(false);
     await refresh();
   }, [refresh]);
+
+  const sessionUnlock = useCallback(async (pin: string) => {
+    // Lancia eccezione se PIN errato (PinModal mostra errore inline)
+    await invoke("check_pin", { pin });
+    setIsSessionUnlocked(true);
+  }, []);
 
   return {
     status,
     sites,
     hasPinSet,
+    isSessionUnlocked,
     loading,
     error,
     blockAll,
@@ -110,6 +119,7 @@ export function useBlocker() {
     setPin,
     changePin,
     resetPin,
+    sessionUnlock,
     refresh,
   };
 }

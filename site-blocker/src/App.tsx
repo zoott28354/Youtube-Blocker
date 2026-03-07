@@ -42,6 +42,20 @@ export default function App() {
     );
   }
 
+  // PIN impostato ma sessione non ancora autenticata
+  if (!blocker.isSessionUnlocked) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-black text-white tracking-tight">
+            {t.title}
+          </h1>
+        </div>
+        <PinModal mode="verify" onConfirm={blocker.sessionUnlock} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
       {/* Header */}
@@ -123,6 +137,7 @@ export default function App() {
           onCancel={() => setShowPinModal(false)}
         />
       )}
+
     </div>
   );
 }
