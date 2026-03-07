@@ -4,11 +4,32 @@
 App desktop Tauri 2 per bloccare siti a livello di sistema su Windows.
 Usecase principale: genitore blocca YouTube (e altri siti) per un figlio di 11 anni.
 Tre livelli di blocco: file `hosts` + regole Windows Firewall anti-DoH + Group Policy browser.
-PIN argon2id richiesto per sbloccare. Interfaccia bilingue IT/EN.
+PIN argon2id richiesto per aprire l'app e per sbloccare. Interfaccia bilingue IT/EN.
 
 ## Stack
 - Tauri 2.x + React + TypeScript + Tailwind CSS
 - Rust backend in `site-blocker/src-tauri/src/`
+
+## Struttura repo
+```
+YouTube-Blocker/
+├── scripts/              — bat file per setup/dev/build/bump_version
+├── LICENSE               — MIT, Copyright 2025 zoott28354
+├── README.md
+├── CLAUDE.md
+└── site-blocker/         — progetto Tauri
+    ├── src-tauri/src/
+    ├── src/
+    └── public/
+```
+
+## Cartelle generate (NON nel git, eliminabili)
+| Cartella | Come si rigenera |
+|---|---|
+| `site-blocker/node_modules/` | `setup.bat` / `npm install` |
+| `site-blocker/dist/` | automatica durante build |
+| `site-blocker/.vite/` | automatica |
+| `site-blocker/src-tauri/target/` | automatica (lenta, ~20 min prima volta) |
 
 ## File chiave
 
@@ -22,7 +43,7 @@ PIN argon2id richiesto per sbloccare. Interfaccia bilingue IT/EN.
 | `src-tauri/src/browsers.rs` | Group Policy DoH per Chrome/Edge/Brave (registry) e Firefox (policies.json) |
 | `src/i18n.tsx` | Traduzioni IT/EN, LangProvider context, useI18n hook |
 | `src/hooks/useBlocker.ts` | Stato React centralizzato, tutti gli invoke Tauri |
-| `src/App.tsx` | Routing tab, flusso primo avvio (setup PIN), toggle lingua |
+| `src/App.tsx` | Routing tab, session lock, setup PIN, toggle lingua |
 
 ## Decisioni architetturali importanti
 
@@ -30,6 +51,13 @@ PIN argon2id richiesto per sbloccare. Interfaccia bilingue IT/EN.
 Non usiamo manifest UAC (non supportato da tauri-build 2.5.x in tauri.conf.json).
 Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 `Start-Process -Verb RunAs` via PowerShell nascosto (CREATE_NO_WINDOW).
+
+### Session lock (PIN all'apertura)
+- All'apertura dell'app, se PIN è impostato, viene mostrata una schermata di verifica PIN
+- Solo dopo autenticazione si accede all'interfaccia principale
+- `isSessionUnlocked` in useBlocker.ts — false al mount, true dopo check_pin con successo
+- Sblocco siti richiede ancora PIN (difesa in profondità)
+- Reset PIN azzera anche la sessione corrente
 
 ### Hosts file
 - Marker: `# SiteBlocker <domain>` identifica le righe nostre
@@ -57,7 +85,7 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 
 ### PIN
 - argon2id, salt OsRng, hash self-describing (include params + salt nel JSON)
-- Blocco NON richiede PIN. Solo sblocco richiede PIN.
+- Blocco NON richiede PIN. Apertura app e sblocco richiedono PIN.
 - Minimo 4 caratteri (validato sia Rust che React)
 - Reset PIN disponibile in Impostazioni (nessun PIN richiesto — chi usa l'app è già admin)
 - Dopo reset: pin_hash = None → al prossimo avvio mostra schermata setup PIN
@@ -67,6 +95,12 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 - `type Translations = (typeof translations)[Lang]` per evitare errori di tipo con union
 - Lingua persistita in localStorage. Default: "it"
 - Toggle ITA/ENG in header (pill style)
+
+### Build e distribuzione
+- Installer NSIS: `scripts/build.bat` → `target/release/bundle/nsis/`
+- Portable exe: `scripts/build_portable.bat` → `YouTubeBlocker_vX.X.X.exe` nella root
+- Bump versione: `scripts/bump_version.bat` → aggiorna tauri.conf.json + Cargo.toml + package.json
+- Publisher: zoott28354 | License: MIT | Copyright © 2025 zoott28354
 
 ### Config
 - `pin_hash: Option<String>` — None = primo avvio, mostra setup PIN
@@ -84,6 +118,7 @@ has_pin()                → bool
 set_pin(pin)             → Result<()>
 change_pin(old, new)     → Result<()>
 reset_pin()              → Result<()>   // azzera pin_hash → None
+check_pin(pin)           → Result<()>   // solo verifica, nessun side effect (session lock)
 ```
 
 ## Preferenze utente
@@ -107,9 +142,8 @@ reset_pin()              → Result<()>   // azzera pin_hash → None
 - PowerShell script con $vars in `-Command` vengono strippati → scrivere script su file .ps1 e usare `-File`
 
 ## Come fare la build
-```bash
-cd site-blocker
-npm install
-npm run tauri dev   # terminale come Admin
-npm run tauri build
+```
+scripts\setup.bat           # prima volta: installa npm packages
+scripts\build.bat           # installer NSIS
+scripts\build_portable.bat  # portable exe
 ```

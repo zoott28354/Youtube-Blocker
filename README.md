@@ -13,7 +13,8 @@ Richiede privilegi di amministratore. Protetto da PIN genitore (argon2id).
 
 | Operazione | Cosa succede |
 |---|---|
-| **Blocca** | Aggiunge voci `127.0.0.1` nel file hosts + regole firewall outbound verso DoH (Cloudflare, Google, Quad9) + Group Policy DoH nei browser |
+| **Apertura app** | Richiede PIN — il figlio non può accedere senza |
+| **Blocca** | Aggiunge voci `127.0.0.1` nel file hosts + regole firewall outbound verso DoH + Group Policy DoH nei browser |
 | **Sblocca** | Richiede PIN → rimuove hosts + firewall + ripristina policy browser → flush DNS |
 
 Il blocco **persiste dopo la chiusura dell'app** e dopo il riavvio del PC.
@@ -49,28 +50,49 @@ L'app non deve restare in esecuzione.
 
 ---
 
-## Build & Run
+## Scripts (cartella `scripts/`)
 
-```bash
-cd site-blocker
-npm install
+Tutti gli script vanno eseguiti con doppio click dalla cartella `scripts/`.
 
-# Sviluppo (terminale come Amministratore)
-npm run tauri dev
+| Script | Cosa fa |
+|---|---|
+| `setup.bat` | Installa le dipendenze npm — eseguire dopo il primo clone |
+| `dev.bat` | Avvia in modalità sviluppo — eleva i privilegi admin automaticamente |
+| `build.bat` | Produce l'installer NSIS in `site-blocker/src-tauri/target/release/bundle/nsis/` |
+| `build_portable.bat` | Produce `YouTubeBlocker_vX.X.X.exe` nella root del repo (senza installer) |
+| `bump_version.bat` | Aggiorna la versione in `tauri.conf.json`, `Cargo.toml` e `package.json` in un colpo |
 
-# Build distribuzione
-npm run tauri build
-# Output: src-tauri/target/release/bundle/nsis/SiteBlocker_x64-setup.exe
-```
-
-> In dev mode il terminale deve girare come **Amministratore**.
-> In produzione l'UAC prompt appare automaticamente al lancio.
+> In dev mode serve essere **Amministratore**. `dev.bat` gestisce l'elevazione da solo.
+> In produzione l'UAC prompt appare automaticamente al lancio dell'app.
 
 ---
 
-## Configurazione
+## Prima build (da zero)
 
-La configurazione è salvata in `%LOCALAPPDATA%\SiteBlocker\config.json`:
+```
+1. Clona il repo
+2. Esegui scripts\setup.bat        → installa npm packages
+3. Esegui scripts\build.bat        → compila tutto (prima volta: 15-30 min)
+   oppure scripts\build_portable.bat
+```
+
+### Cartelle generate dalla build (non nel git, eliminabili per liberare spazio)
+
+| Cartella | Dimensione | Come si rigenera |
+|---|---|---|
+| `site-blocker/node_modules/` | ~400 MB | `setup.bat` o `npm install` |
+| `site-blocker/dist/` | piccola | automatica durante la build |
+| `site-blocker/.vite/` | piccola | automatica |
+| `site-blocker/src-tauri/target/` | **2–5 GB** | automatica (lenta, ~20 min) |
+
+> Eliminare `target/` è sicuro ma richiede una ricompilazione completa.
+> Eliminare solo `target/debug/` libera spazio senza toccare la build di release.
+
+---
+
+## Configurazione persistita
+
+`%LOCALAPPDATA%\SiteBlocker\config.json`
 
 ```json
 {
@@ -89,23 +111,30 @@ La configurazione è salvata in `%LOCALAPPDATA%\SiteBlocker\config.json`:
 ## Architettura
 
 ```
-site-blocker/
-├── src-tauri/src/
-│   ├── main.rs       — comandi Tauri, admin check, AppState
-│   ├── config.rs     — AppConfig, load/save JSON in %LOCALAPPDATA%\SiteBlocker\
-│   ├── auth.rs       — PIN con argon2id
-│   ├── hosts.rs      — blocco/sblocco file hosts + flush DNS
-│   ├── firewall.rs   — regole netsh per DNS-over-HTTPS
-│   └── browsers.rs   — Group Policy DoH per Chrome/Edge/Brave/Firefox
-└── src/
-    ├── i18n.tsx              — traduzioni IT/EN, LangProvider, useI18n
-    ├── App.tsx               — routing tab, primo avvio setup PIN
-    ├── hooks/useBlocker.ts   — stato centralizzato, invoke Tauri
-    └── components/
-        ├── StatusCard.tsx    — badge stato, 3 indicatori, icona
-        ├── SiteList.tsx      — lista siti raggruppata, aggiunta/rimozione
-        ├── PinModal.tsx      — modal setup e verifica PIN
-        └── Settings.tsx      — cambio PIN, reset PIN
+YouTube-Blocker/
+├── scripts/
+│   ├── setup.bat
+│   ├── dev.bat
+│   ├── build.bat
+│   ├── build_portable.bat
+│   └── bump_version.bat
+└── site-blocker/
+    ├── src-tauri/src/
+    │   ├── main.rs       — comandi Tauri, admin check, AppState
+    │   ├── config.rs     — AppConfig, load/save JSON in %LOCALAPPDATA%\SiteBlocker\
+    │   ├── auth.rs       — PIN con argon2id
+    │   ├── hosts.rs      — blocco/sblocco file hosts + flush DNS
+    │   ├── firewall.rs   — regole netsh per DNS-over-HTTPS
+    │   └── browsers.rs   — Group Policy DoH per Chrome/Edge/Brave/Firefox
+    └── src/
+        ├── i18n.tsx              — traduzioni IT/EN, LangProvider, useI18n
+        ├── App.tsx               — routing tab, session lock, setup PIN
+        ├── hooks/useBlocker.ts   — stato centralizzato, invoke Tauri
+        └── components/
+            ├── StatusCard.tsx    — badge stato, 3 indicatori, icona
+            ├── SiteList.tsx      — lista siti raggruppata, aggiunta/rimozione
+            ├── PinModal.tsx      — modal setup e verifica PIN
+            └── Settings.tsx      — cambio PIN, reset PIN
 ```
 
 ---
@@ -122,8 +151,9 @@ site-blocker/
 | `unblock_all(pin)` | Sblocca tutto (PIN obbligatorio) |
 | `has_pin()` | `true` se PIN impostato |
 | `set_pin(pin)` | Imposta PIN (primo avvio) |
-| `change_pin(old, new)` | Cambia PIN |
-| `reset_pin()` | Azzera PIN (riparte da setup) |
+| `change_pin(old, new)` | Cambia PIN (richiede PIN attuale) |
+| `reset_pin()` | Azzera PIN → riparte da setup al prossimo avvio |
+| `check_pin(pin)` | Verifica PIN senza side effects (usato per session lock) |
 
 ---
 
