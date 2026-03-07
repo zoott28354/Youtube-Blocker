@@ -3,7 +3,9 @@ use std::path::PathBuf;
 use std::process::Command;
 use thiserror::Error;
 
-const BLOCK_MARKER: &str = "# SiteBlocker";
+const SECTION_START: &str = "## YouTubeBlocker - Start ##";
+const SECTION_END:   &str = "## YouTubeBlocker - End ##";
+const BLOCK_MARKER:  &str = "# SiteBlocker"; // mantenuto per retrocompatibilità
 
 #[derive(Debug, Error)]
 pub enum HostsError {
@@ -35,11 +37,33 @@ fn flush_dns() {
 
     #[cfg(target_os = "linux")]
     {
-        // systemd-resolved (Ubuntu, Fedora, Arch...)
         let _ = Command::new("systemd-resolve").args(["--flush-caches"]).output();
-        // fallback nscd
         let _ = Command::new("service").args(["nscd", "restart"]).output();
     }
+}
+
+/// Rimuove la sezione YouTubeBlocker (marker inclusi) e le righe vuote che la precedono.
+fn remove_our_section(lines: Vec<String>) -> Vec<String> {
+    let mut result: Vec<String> = Vec::new();
+    let mut in_section = false;
+    for line in lines {
+        if line.trim() == SECTION_START {
+            in_section = true;
+            // Rimuove le righe vuote aggiunte prima della sezione
+            while result.last().map(|l: &String| l.trim().is_empty()).unwrap_or(false) {
+                result.pop();
+            }
+            continue;
+        }
+        if line.trim() == SECTION_END {
+            in_section = false;
+            continue;
+        }
+        if !in_section {
+            result.push(line);
+        }
+    }
+    result
 }
 
 /// True solo se TUTTI i domini hanno una voce 127.0.0.1 nel file hosts.
@@ -55,50 +79,52 @@ pub fn is_blocked(sites: &[String]) -> Result<bool, HostsError> {
     }))
 }
 
-/// Aggiunge le voci di blocco per i siti non ancora presenti.
+/// Aggiunge (o riscrive) la sezione YouTubeBlocker nel file hosts.
 pub fn block_sites(sites: &[String]) -> Result<(), HostsError> {
     let path = hosts_path();
     let content = fs::read_to_string(&path)?;
-    let mut lines: Vec<String> = content.lines().map(String::from).collect();
+    let lines: Vec<String> = content.lines().map(String::from).collect();
 
+    // Rimuove sezione esistente (idempotente)
+    let mut base = remove_our_section(lines);
+
+    // Fallback retrocompatibilità: rimuove righe vecchio formato senza sezione
+    let legacy: std::collections::HashSet<String> = sites
+        .iter()
+        .flat_map(|d| [format!("{} {}", BLOCK_MARKER, d), format!("127.0.0.1 {}", d)])
+        .collect();
+    base.retain(|l| !legacy.contains(l.trim()));
+
+    // Aggiunge la nuova sezione
+    base.push(String::new());
+    base.push(String::new());
+    base.push(SECTION_START.to_string());
     for domain in sites {
-        let already_present = lines.iter().any(|l| {
-            let t = l.trim();
-            !t.starts_with('#') && t.contains("127.0.0.1") && t.contains(domain.as_str())
-        });
-        if !already_present {
-            lines.push(format!("{} {}", BLOCK_MARKER, domain));
-            lines.push(format!("127.0.0.1 {}", domain));
-        }
+        base.push(format!("127.0.0.1 {}", domain));
     }
+    base.push(SECTION_END.to_string());
 
     let eol = if cfg!(target_os = "windows") { "\r\n" } else { "\n" };
-    fs::write(&path, lines.join(eol) + eol)?;
+    fs::write(&path, base.join(eol) + eol)?;
     flush_dns();
     Ok(())
 }
 
-/// Rimuove tutte le voci gestite da SiteBlocker dal file hosts.
-/// Usa match esatto per evitare di rimuovere righe non aggiunte da noi.
+/// Rimuove la sezione YouTubeBlocker dal file hosts.
 pub fn unblock_sites(sites: &[String]) -> Result<(), HostsError> {
     let path = hosts_path();
     let content = fs::read_to_string(&path)?;
+    let lines: Vec<String> = content.lines().map(String::from).collect();
 
-    // Insieme esatto delle righe che abbiamo scritto noi
-    let our_lines: std::collections::HashSet<String> = sites
+    // Rimuove sezione (nuovo formato)
+    let mut filtered = remove_our_section(lines);
+
+    // Fallback retrocompatibilità: rimuove righe vecchio formato
+    let legacy: std::collections::HashSet<String> = sites
         .iter()
-        .flat_map(|domain| {
-            [
-                format!("{} {}", BLOCK_MARKER, domain),
-                format!("127.0.0.1 {}", domain),
-            ]
-        })
+        .flat_map(|d| [format!("{} {}", BLOCK_MARKER, d), format!("127.0.0.1 {}", d)])
         .collect();
-
-    let filtered: Vec<&str> = content
-        .lines()
-        .filter(|line| !our_lines.contains(line.trim()))
-        .collect();
+    filtered.retain(|l| !legacy.contains(l.trim()));
 
     let eol = if cfg!(target_os = "windows") { "\r\n" } else { "\n" };
     fs::write(&path, filtered.join(eol) + eol)?;
