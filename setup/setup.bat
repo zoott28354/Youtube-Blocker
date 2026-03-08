@@ -99,10 +99,39 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+
+rem --- Genera lancia.bat nella root del repo ---
+echo.
+echo Creazione lancia.bat nella root del repo...
+set LANCIA=%~dp0..\lancia.bat
+echo @echo off > "%LANCIA%"
+echo :: YouTube Blocker - Avvio in modalita' sviluppo >> "%LANCIA%"
+echo :: Creato da setup.bat -- non committare questo file >> "%LANCIA%"
+echo. >> "%LANCIA%"
+echo net session ^>nul 2^>^&1 >> "%LANCIA%"
+echo if errorlevel 1 ^( >> "%LANCIA%"
+echo     echo Elevazione privilegi admin richiesta... >> "%LANCIA%"
+echo     powershell -NoProfile -Command "Start-Process cmd -ArgumentList '/k \"%%~f0\"' -Verb RunAs" >> "%LANCIA%"
+echo     exit /b >> "%LANCIA%"
+echo ^) >> "%LANCIA%"
+echo. >> "%LANCIA%"
+echo cd /d "%%~dp0youtube-blocker" >> "%LANCIA%"
+echo set CARGO_TARGET_DIR=%%CD%%\target >> "%LANCIA%"
+echo. >> "%LANCIA%"
+echo echo ========================================== >> "%LANCIA%"
+echo echo  YouTube Blocker - Dev mode >> "%LANCIA%"
+echo echo ========================================== >> "%LANCIA%"
+echo echo. >> "%LANCIA%"
+echo echo Avvio Tauri dev... >> "%LANCIA%"
+echo call npm run tauri dev >> "%LANCIA%"
+echo pause >> "%LANCIA%"
+
 echo.
 echo ==========================================
-echo  Setup completato.
-echo  Usa dev.bat per avviare in modalita' sviluppo.
+echo  Setup completato!
+echo  lancia.bat creato nella root del repo.
+echo  Doppio click su lancia.bat per avviare
+echo  in modalita' sviluppo.
 echo ==========================================
 pause
 exit /b 0

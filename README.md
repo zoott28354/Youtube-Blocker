@@ -56,15 +56,22 @@ Tutti gli script vanno eseguiti con doppio click dalla cartella `setup/`.
 
 | Script | Cosa fa |
 |---|---|
-| `setup.bat` | Controlla prerequisiti (Node.js, Rust) e installa le dipendenze npm |
-| `dev.bat` | Avvia in modalità sviluppo — eleva i privilegi admin automaticamente |
+| `setup.bat` | Controlla prerequisiti (Node.js, Rust), installa le dipendenze npm e genera `lancia.bat` nella root |
 | `build.bat` | Produce l'installer NSIS in `youtube-blocker/target/release/bundle/nsis/` |
 | `build_portable.bat` | Produce `YouTubeBlocker_vX.X.X.exe` nella root del repo (senza installer) |
 | `bump_version.bat` | Aggiorna la versione in `tauri.conf.json`, `Cargo.toml` e `package.json` in un colpo |
 
-> In dev mode serve essere **Amministratore**. `dev.bat` gestisce l'elevazione da solo.
-> In produzione l'UAC prompt appare automaticamente al lancio dell'app.
-> `dev.bat` crea un eseguibile debug in `youtube-blocker/target/debug/` — normale, non è la build finale.
+Dopo aver eseguito `setup.bat`, nella root del repo compare **`lancia.bat`**:
+doppio click su di esso per avviare in modalità sviluppo con elevazione admin automatica.
+
+> `lancia.bat` crea un eseguibile debug in `youtube-blocker/target/debug/` — normale, non è la build finale.
+> `lancia.bat` non è nel git (generato da setup.bat, elencato in `.gitignore`).
+
+### Avvio sviluppo
+```
+1. Esegui setup\setup.bat → npm install + genera lancia.bat nella root
+2. Doppio click su lancia.bat → eleva admin + avvia Tauri dev server
+```
 
 ### Installer
 L'installer NSIS è configurato come **perMachine**: installa in `C:\Program Files\YouTubeBlocker` e

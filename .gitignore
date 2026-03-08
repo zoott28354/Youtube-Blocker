@@ -17,3 +17,6 @@ Thumbs.db
 
 # Portable builds generati da build_portable.bat
 YouTubeBlocker_v*.exe
+
+# Generato da setup.bat dopo npm install — non committare
+lancia.bat

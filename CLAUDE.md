@@ -104,7 +104,8 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 - **installMode: "perMachine"** in tauri.conf.json → installa in `C:\Program Files` per tutti gli utenti
 - **CARGO_TARGET_DIR** impostato nei bat (`set CARGO_TARGET_DIR=%CD%\target`) → Cargo scrive in
   `youtube-blocker/target/` invece di `youtube-blocker/src-tauri/target/` (più ordinato, stesso path da gitignore)
-- Dev build (`dev.bat`) produce `target/debug/youtube-blocker.exe` — normale, è solo per lo sviluppo
+- Dev: `setup/setup.bat` genera `lancia.bat` nella root del repo dopo npm install (non in git)
+  `lancia.bat` eleva admin + avvia `npm run tauri dev` → produce `target/debug/youtube-blocker.exe`
 
 ### Config
 - `pin_hash: Option<String>` — None = primo avvio, mostra setup PIN
@@ -158,7 +159,8 @@ check_pin(pin)           → Result<()>   // solo verifica, nessun side effect (
 
 ## Come fare la build
 ```
-setup\setup.bat           # prima volta: installa npm packages
+setup\setup.bat           # prima volta: npm install + genera lancia.bat nella root
+lancia.bat                # avvia dev mode (generato da setup.bat, non in git)
 setup\build.bat           # installer NSIS
 setup\build_portable.bat  # portable exe
 ```
