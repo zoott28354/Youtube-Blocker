@@ -5,8 +5,9 @@ import StatusCard from "./components/StatusCard";
 import SiteList from "./components/SiteList";
 import PinModal from "./components/PinModal";
 import Settings from "./components/Settings";
+import About from "./components/About";
 
-type Tab = "main" | "sites" | "settings";
+type Tab = "main" | "sites" | "settings" | "about";
 
 export default function App() {
   const blocker = useBlocker();
@@ -18,6 +19,7 @@ export default function App() {
     { key: "main", label: t.tabs.main },
     { key: "sites", label: t.tabs.sites },
     { key: "settings", label: t.tabs.settings },
+    { key: "about", label: t.tabs.about },
   ];
 
   if (blocker.hasPinSet === null) {
@@ -125,6 +127,7 @@ export default function App() {
         {tab === "settings" && (
           <Settings onChangePin={blocker.changePin} onResetPin={blocker.resetPin} />
         )}
+        {tab === "about" && <About />}
       </main>
 
       {showPinModal && (

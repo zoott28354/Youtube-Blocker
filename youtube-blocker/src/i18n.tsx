@@ -7,7 +7,7 @@ export const translations = {
     title: "YouTube Blocker",
     loading: "Caricamento...",
     setupPinHint: "Configura il PIN prima di iniziare.",
-    tabs: { main: "Stato", sites: "Siti", settings: "Impostazioni" },
+    tabs: { main: "Stato", sites: "Siti", settings: "Impostazioni", about: "Info" },
     // StatusCard
     blocked: "BLOCCATO",
     unblocked: "SBLOCCATO",
@@ -52,12 +52,16 @@ export const translations = {
     resetPinBtn: "Reset PIN",
     resetPinConfirm: "Sei sicuro? Il PIN verrà rimosso.",
     resetPinDone: "PIN rimosso. Riavvia l'app per impostarne uno nuovo.",
+    // About
+    aboutDescription: "App desktop per bloccare siti a livello di sistema. Pensata per genitori che vogliono limitare l'accesso a YouTube e altri siti per i propri figli.",
+    aboutLicense: "Licenza MIT",
+    aboutViewOnGithub: "Vedi su GitHub",
   },
   en: {
     title: "YouTube Blocker",
     loading: "Loading...",
     setupPinHint: "Set up your PIN before getting started.",
-    tabs: { main: "Status", sites: "Sites", settings: "Settings" },
+    tabs: { main: "Status", sites: "Sites", settings: "Settings", about: "About" },
     // StatusCard
     blocked: "BLOCKED",
     unblocked: "UNBLOCKED",
@@ -102,6 +106,10 @@ export const translations = {
     resetPinBtn: "Reset PIN",
     resetPinConfirm: "Are you sure? The PIN will be removed.",
     resetPinDone: "PIN removed. Restart the app to set a new one.",
+    // About
+    aboutDescription: "Desktop app to block websites at system level. Built for parents who want to limit their children's access to YouTube and other sites.",
+    aboutLicense: "MIT License",
+    aboutViewOnGithub: "View on GitHub",
   },
 } as const;
 

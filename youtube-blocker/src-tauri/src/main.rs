@@ -181,6 +181,16 @@ fn reset_pin(state: State<AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn open_url(url: String) {
+    #[cfg(target_os = "windows")]
+    let _ = Command::new("cmd").args(["/c", "start", "", &url]).spawn();
+    #[cfg(target_os = "macos")]
+    let _ = Command::new("open").arg(&url).spawn();
+    #[cfg(target_os = "linux")]
+    let _ = Command::new("xdg-open").arg(&url).spawn();
+}
+
+#[tauri::command]
 fn change_pin(old_pin: String, new_pin: String, state: State<AppState>) -> Result<(), String> {
     if new_pin.len() < 4 {
         return Err("Il PIN deve avere almeno 4 caratteri".into());
@@ -218,6 +228,7 @@ fn main() {
             change_pin,
             reset_pin,
             check_pin,
+            open_url,
         ])
         .run(tauri::generate_context!())
         .expect("Errore avvio applicazione Tauri");
