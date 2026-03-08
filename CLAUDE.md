@@ -97,14 +97,23 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 - Toggle ITA/ENG in header (pill style)
 
 ### Build e distribuzione
-- Installer NSIS: `setup/build.bat` → `target/release/bundle/nsis/`
+- Installer NSIS: `setup/build.bat` → `youtube-blocker/target/release/bundle/nsis/`
 - Portable exe: `setup/build_portable.bat` → `YouTubeBlocker_vX.X.X.exe` nella root
 - Bump versione: `setup/bump_version.bat` → aggiorna tauri.conf.json + Cargo.toml + package.json
 - Publisher: zoott28354 | License: MIT | Copyright © 2025 zoott28354
+- **installMode: "perMachine"** in tauri.conf.json → installa in `C:\Program Files` per tutti gli utenti
+- **CARGO_TARGET_DIR** impostato nei bat (`set CARGO_TARGET_DIR=%CD%\target`) → Cargo scrive in
+  `youtube-blocker/target/` invece di `youtube-blocker/src-tauri/target/` (più ordinato, stesso path da gitignore)
+- Dev build (`dev.bat`) produce `target/debug/youtube-blocker.exe` — normale, è solo per lo sviluppo
 
 ### Config
 - `pin_hash: Option<String>` — None = primo avvio, mostra setup PIN
 - `block_doh: bool` — default true
+- Percorso Windows: `%PROGRAMDATA%\YouTubeBlocker\config.json` (es. `C:\ProgramData\YouTubeBlocker\`)
+  - **Perché PROGRAMDATA e non LOCALAPPDATA**: PROGRAMDATA è condiviso tra tutti gli account Windows
+    e scrivibile solo con privilegi admin. Essenziale per installazioni perMachine: se il config fosse
+    in LOCALAPPDATA l'utente figlio avrebbe un config separato senza PIN impostato.
+  - Su Mac/Linux fallback a `dirs::data_local_dir()`
 
 ## Comandi Tauri disponibili
 ```
@@ -140,6 +149,12 @@ check_pin(pin)           → Result<()>   // solo verifica, nessun side effect (
 - Hosts file svuotato su unblock → bug risolto con HashSet di righe esatte (non match parziale)
 - `type Translations = typeof translations.it` causa errore TS con union → usare `(typeof translations)[Lang]`
 - PowerShell script con $vars in `-Command` vengono strippati → scrivere script su file .ps1 e usare `-File`
+- `variant NoAppData is never constructed` (warning Rust su Windows) → aggiungere `#[cfg(not(target_os = "windows"))]`
+  sia alla variante dell'enum che al ramo di codice che la costruisce
+- Batch: `(s/n):` dentro blocchi `if (...)` causa `: non atteso.` — la `)` chiude prematuramente il blocco.
+  Usare `[s/n]` oppure riscrivere con `goto` (nessun blocco parentesizzato per control flow)
+- `setup.bat` mostra i prerequisiti (Node.js, Rust) con [OK]/[MANCANTE] già nel menu, prima che l'utente
+  selezioni un'opzione, usando `where node` / `where cargo` (più affidabile di eseguire il tool direttamente)
 
 ## Come fare la build
 ```

@@ -56,14 +56,19 @@ Tutti gli script vanno eseguiti con doppio click dalla cartella `setup/`.
 
 | Script | Cosa fa |
 |---|---|
-| `setup.bat` | Installa le dipendenze npm — eseguire dopo il primo clone |
+| `setup.bat` | Controlla prerequisiti (Node.js, Rust) e installa le dipendenze npm |
 | `dev.bat` | Avvia in modalità sviluppo — eleva i privilegi admin automaticamente |
-| `build.bat` | Produce l'installer NSIS in `youtube-blocker/src-tauri/target/release/bundle/nsis/` |
+| `build.bat` | Produce l'installer NSIS in `youtube-blocker/target/release/bundle/nsis/` |
 | `build_portable.bat` | Produce `YouTubeBlocker_vX.X.X.exe` nella root del repo (senza installer) |
 | `bump_version.bat` | Aggiorna la versione in `tauri.conf.json`, `Cargo.toml` e `package.json` in un colpo |
 
 > In dev mode serve essere **Amministratore**. `dev.bat` gestisce l'elevazione da solo.
 > In produzione l'UAC prompt appare automaticamente al lancio dell'app.
+> `dev.bat` crea un eseguibile debug in `youtube-blocker/target/debug/` — normale, non è la build finale.
+
+### Installer
+L'installer NSIS è configurato come **perMachine**: installa in `C:\Program Files\YouTubeBlocker` e
+rende l'app disponibile a tutti gli utenti Windows. Richiede privilegi admin per installare/disinstallare.
 
 ---
 
