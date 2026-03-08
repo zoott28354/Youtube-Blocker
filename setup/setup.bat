@@ -1,9 +1,8 @@
 @echo off
 setlocal enabledelayedexpansion
-:: YouTube Blocker - Setup
-:: Author : zoott28354
-:: GitHub : https://github.com/zoott28354/Youtube-Blocker
-:: ---
+rem YouTube Blocker - Setup
+rem Author : zoott28354
+rem GitHub : https://github.com/zoott28354/Youtube-Blocker
 
 :menu
 cls
@@ -18,21 +17,21 @@ echo  [4] Esci
 echo.
 set /p SCELTA=Scelta:
 
-if "!SCELTA!"=="1" goto :dev_setup
-if "!SCELTA!"=="2" goto :download_releases
-if "!SCELTA!"=="3" goto :download_releases
+if "!SCELTA!"=="1" goto dev_setup
+if "!SCELTA!"=="2" goto download_releases
+if "!SCELTA!"=="3" goto download_releases
 if "!SCELTA!"=="4" exit /b 0
 echo Scelta non valida.
 pause
-goto :menu
+goto menu
 
-:: ------------------------------------------
+rem ------------------------------------------
 :dev_setup
 echo.
 echo Controllo prerequisiti...
 echo.
 
-:: Verifica Node.js
+rem Verifica Node.js
 node --version >nul 2>&1
 if errorlevel 1 (
     echo [MANCANTE] Node.js non trovato.
@@ -48,7 +47,7 @@ if errorlevel 1 (
 for /f %%V in ('node --version') do set NODE_VER=%%V
 echo [OK] Node.js !NODE_VER!
 
-:: Verifica Cargo / Rust
+rem Verifica Cargo / Rust
 cargo --version >nul 2>&1
 if errorlevel 1 (
     echo [MANCANTE] Rust/Cargo non trovato.
@@ -87,7 +86,7 @@ echo ==========================================
 pause
 exit /b 0
 
-:: ------------------------------------------
+rem ------------------------------------------
 :download_releases
 echo.
 echo Apertura pagina GitHub Releases...
@@ -95,4 +94,4 @@ start "" "https://github.com/zoott28354/Youtube-Blocker/releases"
 echo.
 echo Scarica il file .exe dalla pagina che si e' aperta nel browser.
 pause
-goto :menu
+goto menu
