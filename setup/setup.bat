@@ -91,7 +91,7 @@ echo [OK] Rust/Cargo !CARGO_VER!
 echo.
 echo Prerequisiti OK. Installazione dipendenze npm...
 echo.
-cd /d "%~dp0..\site-blocker"
+cd /d "%~dp0..\youtube-blocker"
 call npm install
 if errorlevel 1 (
     echo.

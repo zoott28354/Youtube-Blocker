@@ -46,12 +46,12 @@ pub fn config_path() -> Result<PathBuf, ConfigError> {
     {
         let programdata = std::env::var("PROGRAMDATA")
             .unwrap_or_else(|_| "C:\\ProgramData".into());
-        Ok(PathBuf::from(programdata).join("SiteBlocker").join("config.json"))
+        Ok(PathBuf::from(programdata).join("YouTubeBlocker").join("config.json"))
     }
     #[cfg(not(target_os = "windows"))]
     {
         let base = dirs::data_local_dir().ok_or(ConfigError::NoAppData)?;
-        Ok(base.join("SiteBlocker").join("config.json"))
+        Ok(base.join("YouTubeBlocker").join("config.json"))
     }
 }
 

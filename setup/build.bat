@@ -7,7 +7,7 @@
 echo ==========================================
 echo  YouTube Blocker - Build installer
 echo ==========================================
-cd /d "%~dp0..\site-blocker"
+cd /d "%~dp0..\youtube-blocker"
 set CARGO_TARGET_DIR=%CD%\target
 
 :: Legge versione da tauri.conf.json

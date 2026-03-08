@@ -58,7 +58,7 @@ Tutti gli script vanno eseguiti con doppio click dalla cartella `setup/`.
 |---|---|
 | `setup.bat` | Installa le dipendenze npm — eseguire dopo il primo clone |
 | `dev.bat` | Avvia in modalità sviluppo — eleva i privilegi admin automaticamente |
-| `build.bat` | Produce l'installer NSIS in `site-blocker/src-tauri/target/release/bundle/nsis/` |
+| `build.bat` | Produce l'installer NSIS in `youtube-blocker/src-tauri/target/release/bundle/nsis/` |
 | `build_portable.bat` | Produce `YouTubeBlocker_vX.X.X.exe` nella root del repo (senza installer) |
 | `bump_version.bat` | Aggiorna la versione in `tauri.conf.json`, `Cargo.toml` e `package.json` in un colpo |
 
@@ -80,10 +80,10 @@ Tutti gli script vanno eseguiti con doppio click dalla cartella `setup/`.
 
 | Cartella | Dimensione | Come si rigenera |
 |---|---|---|
-| `site-blocker/node_modules/` | ~400 MB | `setup.bat` o `npm install` |
-| `site-blocker/dist/` | piccola | automatica durante la build |
-| `site-blocker/.vite/` | piccola | automatica |
-| `site-blocker/target/` | **2–5 GB** | automatica (lenta, ~20 min) |
+| `youtube-blocker/node_modules/` | ~400 MB | `setup.bat` o `npm install` |
+| `youtube-blocker/dist/` | piccola | automatica durante la build |
+| `youtube-blocker/.vite/` | piccola | automatica |
+| `youtube-blocker/target/` | **2–5 GB** | automatica (lenta, ~20 min) |
 
 > Eliminare `target/` è sicuro ma richiede una ricompilazione completa.
 > Eliminare solo `target/debug/` libera spazio senza toccare la build di release.
@@ -92,7 +92,7 @@ Tutti gli script vanno eseguiti con doppio click dalla cartella `setup/`.
 
 ## Configurazione persistita
 
-`%PROGRAMDATA%\SiteBlocker\config.json`
+`%PROGRAMDATA%\YouTubeBlocker\config.json`
 
 ```json
 {
@@ -118,10 +118,10 @@ YouTube-Blocker/
 │   ├── build.bat
 │   ├── build_portable.bat
 │   └── bump_version.bat
-└── site-blocker/
+└── youtube-blocker/
     ├── src-tauri/src/
     │   ├── main.rs       — comandi Tauri, admin check, AppState
-    │   ├── config.rs     — AppConfig, load/save JSON in %PROGRAMDATA%\SiteBlocker\
+    │   ├── config.rs     — AppConfig, load/save JSON in %PROGRAMDATA%\YouTubeBlocker\
     │   ├── auth.rs       — PIN con argon2id
     │   ├── hosts.rs      — blocco/sblocco file hosts + flush DNS
     │   ├── firewall.rs   — regole netsh per DNS-over-HTTPS
@@ -173,17 +173,17 @@ YouTube-Blocker/
 
 ```powershell
 # Dopo blocco: voci nel file hosts
-Get-Content "$env:SystemRoot\System32\drivers\etc\hosts" | Select-String "SiteBlocker"
+Get-Content "$env:SystemRoot\System32\drivers\etc\hosts" | Select-String "YouTubeBlocker"
 
 # Dopo blocco: DNS risolve a 127.0.0.1
 Resolve-DnsName youtube.com
 
 # Regole firewall attive
-netsh advfirewall firewall show rule name="SiteBlocker_DoH_1_1_1_1_p443"
+netsh advfirewall firewall show rule name="YouTubeBlocker_DoH_1_1_1_1_p443"
 
 # Policy browser Chrome
 reg query "HKLM\SOFTWARE\Policies\Google\Chrome" /v DnsOverHttpsMode
 
 # Configurazione salvata
-Get-Content "$env:PROGRAMDATA\SiteBlocker\config.json"
+Get-Content "$env:PROGRAMDATA\YouTubeBlocker\config.json"
 ```

@@ -19,10 +19,10 @@ const FIREFOX_INSTALL_DIRS: &[&str] = &[
 ];
 
 /// Marker nel JSON per riconoscere il file creato da noi.
-const SITEBLOCKER_MARKER: &str = "\"_siteblocker\":true";
+const YOUTUBEBLOCKER_MARKER: &str = "\"_youtubeblocker\":true";
 
 const FIREFOX_POLICY_JSON: &str =
-    r#"{"policies":{"DNSOverHTTPS":{"Enabled":false,"Locked":true}},"_siteblocker":true}"#;
+    r#"{"policies":{"DNSOverHTTPS":{"Enabled":false,"Locked":true}},"_youtubeblocker":true}"#;
 
 // ─── API pubblica ────────────────────────────────────────────────────────────
 
@@ -48,7 +48,7 @@ pub fn are_policies_active() -> bool {
         if let Some(dist_dir) = firefox_dist_dir() {
             let policy_path = dist_dir.join("policies.json");
             if let Ok(content) = std::fs::read_to_string(&policy_path) {
-                if content.contains(SITEBLOCKER_MARKER) {
+                if content.contains(YOUTUBEBLOCKER_MARKER) {
                     return true;
                 }
             }
@@ -124,7 +124,7 @@ fn set_firefox_doh(allow: bool) {
     if allow {
         // Ripristina: rimuovi il nostro file e, se esiste, rimetti il backup
         if let Ok(content) = std::fs::read_to_string(&policy_path) {
-            if content.contains(SITEBLOCKER_MARKER) {
+            if content.contains(YOUTUBEBLOCKER_MARKER) {
                 if backup_path.exists() {
                     let _ = std::fs::rename(&backup_path, &policy_path);
                 } else {
@@ -138,7 +138,7 @@ fn set_firefox_doh(allow: bool) {
         if policy_path.exists() {
             let content = std::fs::read_to_string(&policy_path).unwrap_or_default();
             // Non sovrascrivere un backup già esistente; non toccare file già nostri
-            if !content.contains(SITEBLOCKER_MARKER) && !backup_path.exists() {
+            if !content.contains(YOUTUBEBLOCKER_MARKER) && !backup_path.exists() {
                 let _ = std::fs::copy(&policy_path, &backup_path);
             }
         }

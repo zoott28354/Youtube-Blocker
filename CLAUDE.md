@@ -8,7 +8,7 @@ PIN argon2id richiesto per aprire l'app e per sbloccare. Interfaccia bilingue IT
 
 ## Stack
 - Tauri 2.x + React + TypeScript + Tailwind CSS
-- Rust backend in `site-blocker/src-tauri/src/`
+- Rust backend in `youtube-blocker/src-tauri/src/`
 
 ## Struttura repo
 ```
@@ -17,7 +17,7 @@ YouTube-Blocker/
 ├── LICENSE               — MIT, Copyright 2025 zoott28354
 ├── README.md
 ├── CLAUDE.md
-└── site-blocker/         — progetto Tauri
+└── youtube-blocker/      — progetto Tauri
     ├── src-tauri/src/
     ├── src/
     └── public/
@@ -26,17 +26,17 @@ YouTube-Blocker/
 ## Cartelle generate (NON nel git, eliminabili)
 | Cartella | Come si rigenera |
 |---|---|
-| `site-blocker/node_modules/` | `setup.bat` / `npm install` |
-| `site-blocker/dist/` | automatica durante build |
-| `site-blocker/.vite/` | automatica |
-| `site-blocker/src-tauri/target/` | automatica (lenta, ~20 min prima volta) |
+| `youtube-blocker/node_modules/` | `setup.bat` / `npm install` |
+| `youtube-blocker/dist/` | automatica durante build |
+| `youtube-blocker/.vite/` | automatica |
+| `youtube-blocker/target/` | automatica (lenta, ~20 min prima volta) |
 
 ## File chiave
 
 | File | Responsabilità |
 |---|---|
 | `src-tauri/src/main.rs` | Comandi Tauri, admin check runtime, AppState (Mutex) |
-| `src-tauri/src/config.rs` | AppConfig, load/save `%PROGRAMDATA%\SiteBlocker\config.json` (condiviso tra utenti) |
+| `src-tauri/src/config.rs` | AppConfig, load/save `%PROGRAMDATA%\YouTubeBlocker\config.json` (condiviso tra utenti) |
 | `src-tauri/src/auth.rs` | hash_pin / verify_pin con argon2id |
 | `src-tauri/src/hosts.rs` | Lettura/scrittura file hosts + flush DNS multipiattaforma |
 | `src-tauri/src/firewall.rs` | Regole netsh outbound TCP verso DoH su porte 443 e 853 |
@@ -60,21 +60,21 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 - Reset PIN azzera anche la sessione corrente
 
 ### Hosts file
-- Marker: `# SiteBlocker <domain>` identifica le righe nostre
+- Marker: `# YouTubeBlocker <domain>` identifica le righe nostre
 - Rimozione: match ESATTO sulle righe scritte da noi (HashSet), NON match parziale
   su "127.0.0.1" + dominio (bug storico che svuotava il file hosts)
 - Line endings: `\r\n` su Windows, `\n` su Mac/Linux (cfg! compile-time)
 - flush_dns() chiamato dopo ogni write
 
 ### Firewall
-- Nome regole: `SiteBlocker_DoH_<ip>_p<porta>` (deterministico)
+- Nome regole: `YouTubeBlocker_DoH_<ip>_p<porta>` (deterministico)
 - Remove-before-add: idempotente, sicuro chiamare più volte
 - Solo TCP (DoH su QUIC/UDP porta 443 non bloccato — possibile v2)
 
 ### Browser DoH (browsers.rs)
 - Chrome/Edge/Brave: chiave registry `HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"`
 - Firefox: crea `distribution/policies.json` nella cartella di installazione con backup/restore
-- Marker `"_siteblocker":true` nel JSON per identificare i file creati da noi
+- Marker `"_youtubeblocker":true` nel JSON per identificare i file creati da noi
 - are_policies_active() controlla Chrome come campione + presenza del nostro JSON Firefox
 
 ### Espansione domini

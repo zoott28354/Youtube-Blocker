@@ -5,7 +5,7 @@ use thiserror::Error;
 
 const SECTION_START: &str = "## YouTubeBlocker - Start ##";
 const SECTION_END:   &str = "## YouTubeBlocker - End ##";
-const BLOCK_MARKER:  &str = "# SiteBlocker"; // mantenuto per retrocompatibilità
+const BLOCK_MARKER:  &str = "# YouTubeBlocker"; // mantenuto per retrocompatibilità
 
 #[derive(Debug, Error)]
 pub enum HostsError {

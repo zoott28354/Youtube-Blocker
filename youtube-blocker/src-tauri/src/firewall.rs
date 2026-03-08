@@ -17,7 +17,7 @@ const DOH_SERVERS: &[&str] = &[
     "9.9.9.9", // Quad9
 ];
 const DOH_PORTS: &[&str] = &["443", "853"];
-const RULE_PREFIX: &str = "SiteBlocker_DoH_";
+const RULE_PREFIX: &str = "YouTubeBlocker_DoH_";
 
 fn rule_name(ip: &str, port: &str) -> String {
     format!("{}{}_p{}", RULE_PREFIX, ip.replace('.', "_"), port)
@@ -58,7 +58,7 @@ pub fn add_firewall_rules() -> Result<(), FirewallError> {
     Ok(())
 }
 
-/// Rimuove tutte le regole firewall SiteBlocker.
+/// Rimuove tutte le regole firewall YouTubeBlocker.
 pub fn remove_firewall_rules() -> Result<(), FirewallError> {
     for &ip in DOH_SERVERS {
         for &port in DOH_PORTS {

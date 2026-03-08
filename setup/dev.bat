@@ -15,7 +15,7 @@ if errorlevel 1 (
 echo ==========================================
 echo  YouTube Blocker - Dev mode
 echo ==========================================
-cd /d "%~dp0..\site-blocker"
+cd /d "%~dp0..\youtube-blocker"
 set CARGO_TARGET_DIR=%CD%\target
 
 echo.

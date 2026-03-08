@@ -1,12 +1,12 @@
 # Rust / Tauri (target spostato fuori da src-tauri/ via CARGO_TARGET_DIR nei bat)
-site-blocker/target/
+youtube-blocker/target/
 
 # Node
-site-blocker/node_modules/
-site-blocker/dist/
+youtube-blocker/node_modules/
+youtube-blocker/dist/
 
 # Vite
-site-blocker/.vite/
+youtube-blocker/.vite/
 
 # OS
 .DS_Store
