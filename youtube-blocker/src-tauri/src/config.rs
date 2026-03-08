@@ -9,6 +9,7 @@ pub enum ConfigError {
     Io(#[from] std::io::Error),
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
+    #[cfg(not(target_os = "windows"))]
     #[error("AppData path non trovato")]
     NoAppData,
 }
