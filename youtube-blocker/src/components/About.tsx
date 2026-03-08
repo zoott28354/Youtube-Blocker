@@ -15,7 +15,11 @@ export default function About() {
     <div className="flex flex-col items-center text-center gap-8 py-8">
       {/* Icona + nome */}
       <div>
-        <div className="text-5xl mb-3">🛡️</div>
+        <img
+          src="/icon.png"
+          alt="YouTube Blocker"
+          className="w-20 h-20 mx-auto mb-3 rounded-2xl"
+        />
         <h2 className="text-2xl font-black text-white">YouTube Blocker</h2>
         <p className="text-sm text-gray-400 mt-1">v{version}</p>
       </div>
