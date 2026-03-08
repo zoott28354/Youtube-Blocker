@@ -92,7 +92,7 @@ Tutti gli script vanno eseguiti con doppio click dalla cartella `setup/`.
 
 ## Configurazione persistita
 
-`%LOCALAPPDATA%\SiteBlocker\config.json`
+`%PROGRAMDATA%\SiteBlocker\config.json`
 
 ```json
 {
@@ -121,7 +121,7 @@ YouTube-Blocker/
 └── site-blocker/
     ├── src-tauri/src/
     │   ├── main.rs       — comandi Tauri, admin check, AppState
-    │   ├── config.rs     — AppConfig, load/save JSON in %LOCALAPPDATA%\SiteBlocker\
+    │   ├── config.rs     — AppConfig, load/save JSON in %PROGRAMDATA%\SiteBlocker\
     │   ├── auth.rs       — PIN con argon2id
     │   ├── hosts.rs      — blocco/sblocco file hosts + flush DNS
     │   ├── firewall.rs   — regole netsh per DNS-over-HTTPS
@@ -185,5 +185,5 @@ netsh advfirewall firewall show rule name="SiteBlocker_DoH_1_1_1_1_p443"
 reg query "HKLM\SOFTWARE\Policies\Google\Chrome" /v DnsOverHttpsMode
 
 # Configurazione salvata
-Get-Content "$env:LOCALAPPDATA\SiteBlocker\config.json"
+Get-Content "$env:PROGRAMDATA\SiteBlocker\config.json"
 ```

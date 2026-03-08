@@ -36,7 +36,7 @@ YouTube-Blocker/
 | File | Responsabilità |
 |---|---|
 | `src-tauri/src/main.rs` | Comandi Tauri, admin check runtime, AppState (Mutex) |
-| `src-tauri/src/config.rs` | AppConfig, load/save `%LOCALAPPDATA%\SiteBlocker\config.json` |
+| `src-tauri/src/config.rs` | AppConfig, load/save `%PROGRAMDATA%\SiteBlocker\config.json` (condiviso tra utenti) |
 | `src-tauri/src/auth.rs` | hash_pin / verify_pin con argon2id |
 | `src-tauri/src/hosts.rs` | Lettura/scrittura file hosts + flush DNS multipiattaforma |
 | `src-tauri/src/firewall.rs` | Regole netsh outbound TCP verso DoH su porte 443 e 853 |

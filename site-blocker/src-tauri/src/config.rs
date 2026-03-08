@@ -1,4 +1,3 @@
-use dirs::data_local_dir;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -39,8 +38,21 @@ impl Default for AppConfig {
 }
 
 pub fn config_path() -> Result<PathBuf, ConfigError> {
-    let base = data_local_dir().ok_or(ConfigError::NoAppData)?;
-    Ok(base.join("SiteBlocker").join("config.json"))
+    // %PROGRAMDATA% (C:\ProgramData) — condiviso tra tutti gli utenti Windows,
+    // scrivibile solo con privilegi admin (che l'app già richiede).
+    // Necessario per perMachine: il config PIN deve essere lo stesso
+    // indipendentemente da quale account apre l'app.
+    #[cfg(target_os = "windows")]
+    {
+        let programdata = std::env::var("PROGRAMDATA")
+            .unwrap_or_else(|_| "C:\\ProgramData".into());
+        Ok(PathBuf::from(programdata).join("SiteBlocker").join("config.json"))
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let base = dirs::data_local_dir().ok_or(ConfigError::NoAppData)?;
+        Ok(base.join("SiteBlocker").join("config.json"))
+    }
 }
 
 pub fn load_config() -> Result<AppConfig, ConfigError> {
