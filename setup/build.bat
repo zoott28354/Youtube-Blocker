@@ -8,6 +8,7 @@ echo ==========================================
 echo  YouTube Blocker - Build installer
 echo ==========================================
 cd /d "%~dp0..\site-blocker"
+set CARGO_TARGET_DIR=%CD%\target
 
 :: Legge versione da tauri.conf.json
 for /f "tokens=2 delims=:, " %%V in ('findstr /r "\"version\"" src-tauri\tauri.conf.json') do (
@@ -29,6 +30,6 @@ if errorlevel 1 (
 echo.
 echo ==========================================
 echo  Build completata.
-echo  Output: src-tauri\target\release\bundle\nsis\
+echo  Output: target\release\bundle\nsis\
 echo ==========================================
 pause

@@ -16,6 +16,7 @@ echo ==========================================
 echo  YouTube Blocker - Dev mode
 echo ==========================================
 cd /d "%~dp0..\site-blocker"
+set CARGO_TARGET_DIR=%CD%\target
 
 echo.
 echo Avvio Tauri dev...

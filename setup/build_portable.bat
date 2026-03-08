@@ -8,6 +8,7 @@ echo ==========================================
 echo  YouTube Blocker - Build portable
 echo ==========================================
 cd /d "%~dp0..\site-blocker"
+set CARGO_TARGET_DIR=%CD%\target
 
 :: Legge versione da tauri.conf.json
 for /f "tokens=2 delims=:, " %%V in ('findstr /r "\"version\"" src-tauri\tauri.conf.json') do (
@@ -27,7 +28,7 @@ if errorlevel 1 (
 )
 
 :: Copia e rinomina exe con versione nella root del repo
-set SRC=src-tauri\target\release\site-blocker.exe
+set SRC=target\release\youtube-blocker.exe
 set DST=..\YouTubeBlocker_v%APP_VER%.exe
 
 if exist "%SRC%" (

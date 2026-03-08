@@ -1,5 +1,5 @@
 [package]
-name = "site-blocker"
+name = "youtube-blocker"
 version = "1.0.0"
 edition = "2021"
 authors = ["zoott28354"]

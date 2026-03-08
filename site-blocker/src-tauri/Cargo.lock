@@ -2888,20 +2888,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2aa850e253778c88a04c3d7323b043aeda9d3e30d5971937c1855769763678e"
 
 [[package]]
-name = "site-blocker"
-version = "1.0.0"
-dependencies = [
- "argon2",
- "dirs 5.0.1",
- "rand_core 0.6.4",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "thiserror 1.0.69",
-]
-
-[[package]]
 name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4762,6 +4748,20 @@ dependencies = [
  "quote",
  "syn 2.0.117",
  "synstructure",
+]
+
+[[package]]
+name = "youtube-blocker"
+version = "1.0.0"
+dependencies = [
+ "argon2",
+ "dirs 5.0.1",
+ "rand_core 0.6.4",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "thiserror 1.0.69",
 ]
 
 [[package]]

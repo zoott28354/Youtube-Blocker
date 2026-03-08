@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "SiteBlocker",
+  "productName": "YouTubeBlocker",
   "version": "1.0.0",
-  "identifier": "com.siteblocker.app",
+  "identifier": "com.youtubeblocker.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "SiteBlocker",
+        "title": "YouTube Blocker",
         "width": 420,
         "height": 680,
         "minWidth": 380,

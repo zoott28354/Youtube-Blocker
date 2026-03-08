@@ -83,7 +83,7 @@ Tutti gli script vanno eseguiti con doppio click dalla cartella `setup/`.
 | `site-blocker/node_modules/` | ~400 MB | `setup.bat` o `npm install` |
 | `site-blocker/dist/` | piccola | automatica durante la build |
 | `site-blocker/.vite/` | piccola | automatica |
-| `site-blocker/src-tauri/target/` | **2–5 GB** | automatica (lenta, ~20 min) |
+| `site-blocker/target/` | **2–5 GB** | automatica (lenta, ~20 min) |
 
 > Eliminare `target/` è sicuro ma richiede una ricompilazione completa.
 > Eliminare solo `target/debug/` libera spazio senza toccare la build di release.

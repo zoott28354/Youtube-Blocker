@@ -1,5 +1,5 @@
-# Rust / Tauri
-site-blocker/src-tauri/target/
+# Rust / Tauri (target spostato fuori da src-tauri/ via CARGO_TARGET_DIR nei bat)
+site-blocker/target/
 
 # Node
 site-blocker/node_modules/
