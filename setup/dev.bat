@@ -8,8 +8,7 @@
 net session >nul 2>&1
 if errorlevel 1 (
     echo Elevazione privilegi admin richiesta...
-    powershell -NoProfile -WindowStyle Hidden -Command ^
-        "Start-Process cmd -ArgumentList '/c cd /d ""%~dp0..\site-blocker"" && npm run tauri dev && pause' -Verb RunAs"
+    powershell -NoProfile -Command "Start-Process cmd -ArgumentList '/k \"%~f0\"' -Verb RunAs"
     exit /b
 )
 
