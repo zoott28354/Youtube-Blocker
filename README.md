@@ -1,5 +1,5 @@
 # YouTube Blocker
-### *...and other sites you want to block*
+### *...e altri siti che vuoi bloccare*
 
 App desktop per bloccare siti a livello di sistema su Windows (Mac/Linux in roadmap).
 Modifica il file `hosts` + regole Windows Firewall per bloccare i resolver DNS-over-HTTPS,
