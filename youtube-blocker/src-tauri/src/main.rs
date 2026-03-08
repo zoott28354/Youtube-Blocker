@@ -8,7 +8,7 @@ mod hosts;
 
 use auth::{hash_pin, verify_pin};
 use browsers::{are_policies_active, disable_browser_doh, enable_browser_doh};
-use config::{load_config, save_config, AppConfig};
+use config::{config_path, load_config, save_config, AppConfig};
 use firewall::{add_firewall_rules, are_rules_active, remove_firewall_rules};
 use hosts::{block_sites, is_blocked, unblock_sites};
 use std::process::Command;
@@ -205,7 +205,32 @@ fn change_pin(old_pin: String, new_pin: String, state: State<AppState>) -> Resul
     save_config(&cfg).map_err(|e| e.to_string())
 }
 
+// Modalità cleanup: chiamata dal disinstallatore NSIS con --cleanup.
+// Rimuove hosts, firewall, policy browser e config SENZA aprire la GUI.
+// Deve essere chiamata prima che i file vengano cancellati.
+fn run_cleanup() {
+    let cfg = load_config().unwrap_or_default();
+    let _ = unblock_sites(&cfg.sites);
+    let _ = remove_firewall_rules();
+    enable_browser_doh();
+    if let Ok(path) = config_path() {
+        let _ = std::fs::remove_file(&path);
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::remove_dir(parent);
+        }
+    }
+}
+
 fn main() {
+    // Intercetta --cleanup PRIMA di qualsiasi inizializzazione Tauri.
+    // Il disinstallatore NSIS chiama l'exe con questo flag per ripristinare
+    // hosts, firewall e policy browser prima di cancellare i file.
+    let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(|s| s.as_str()) == Some("--cleanup") {
+        run_cleanup();
+        return;
+    }
+
     #[cfg(target_os = "windows")]
     if !is_admin() {
         relaunch_as_admin();
