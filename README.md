@@ -50,7 +50,7 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 |---|---|
 | **🗂️ Hosts** | Reindirizza la risoluzione DNS a `127.0.0.1` per tutti i browser |
 | **🔥 Firewall DoH** | Blocca il traffico TCP outbound verso IP DoH noti (Cloudflare, Google, Quad9) su porte 443 e 853 |
-| **🌐 Policy browser** | Disabilita il DoH interno di Chrome, Edge, Brave e Firefox via Group Policy |
+| **🌐 Policy browser** | Disabilita il DoH interno di Chrome, Edge, Brave, Vivaldi, Opera/Opera GX, Chromium e Firefox via Group Policy |
 
 > I tre livelli insieme impediscono l'aggiramento tramite DNS-over-HTTPS,
 > sia a livello di sistema operativo che di singolo browser.

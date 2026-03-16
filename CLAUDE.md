@@ -72,7 +72,7 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 - Solo TCP (DoH su QUIC/UDP porta 443 non bloccato — possibile v2)
 
 ### Browser DoH (browsers.rs)
-- Chrome/Edge/Brave: chiave registry `HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"`
+- Chrome/Edge/Brave/Vivaldi/Opera/Chromium: chiave registry `HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"`
 - Firefox: crea `distribution/policies.json` nella cartella di installazione con backup/restore
 - Marker `"_youtubeblocker":true` nel JSON per identificare i file creati da noi
 - are_policies_active() controlla Chrome come campione + presenza del nostro JSON Firefox

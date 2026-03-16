@@ -1,6 +1,6 @@
 /// Disabilita/abilita il DNS-over-HTTPS nei principali browser via Group Policy.
 ///
-/// Chrome/Edge/Brave: chiave di registro HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"
+/// Chrome/Edge/Brave/Vivaldi/Opera/Chromium: chiave registro HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"
 /// Firefox: crea/rimuove distribution/policies.json nella cartella di installazione.
 ///
 /// Tutte le operazioni sono best-effort (il browser potrebbe non essere installato).
@@ -11,6 +11,9 @@ const CHROMIUM_POLICY_KEYS: &[&str] = &[
     r"HKLM\SOFTWARE\Policies\Google\Chrome",
     r"HKLM\SOFTWARE\Policies\Microsoft\Edge",
     r"HKLM\SOFTWARE\Policies\BraveSoftware\Brave",
+    r"HKLM\SOFTWARE\Policies\Vivaldi",
+    r"HKLM\SOFTWARE\Policies\Opera Software\Opera",
+    r"HKLM\SOFTWARE\Policies\Chromium",
 ];
 
 const FIREFOX_INSTALL_DIRS: &[&str] = &[
