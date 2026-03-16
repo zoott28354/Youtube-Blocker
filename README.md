@@ -50,10 +50,25 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 |---|---|
 | **🗂️ Hosts** | Reindirizza la risoluzione DNS a `127.0.0.1` per tutti i browser |
 | **🔥 Firewall DoH** | Blocca il traffico TCP outbound verso IP DoH noti (Cloudflare, Google, Quad9) su porte 443 e 853 |
-| **🌐 Policy browser** | Disabilita il DoH interno di Chrome, Edge, Brave, Vivaldi, Opera/Opera GX, Chromium e Firefox via Group Policy |
+| **🌐 Policy browser** | Disabilita il DoH interno dei principali browser via Group Policy |
 
 > I tre livelli insieme impediscono l'aggiramento tramite DNS-over-HTTPS,
 > sia a livello di sistema operativo che di singolo browser.
+
+### Browser con policy DoH gestita
+
+| Browser | Metodo |
+|---|---|
+| Google Chrome | Registry `HKLM\SOFTWARE\Policies\Google\Chrome` |
+| Microsoft Edge | Registry `HKLM\SOFTWARE\Policies\Microsoft\Edge` |
+| Brave | Registry `HKLM\SOFTWARE\Policies\BraveSoftware\Brave` |
+| Vivaldi | Registry `HKLM\SOFTWARE\Policies\Vivaldi` |
+| Opera / Opera GX | Registry `HKLM\SOFTWARE\Policies\Opera Software\Opera` |
+| Chromium | Registry `HKLM\SOFTWARE\Policies\Chromium` |
+| Firefox | `distribution/policies.json` nella cartella di installazione |
+
+> Se il browser non è installato, l'operazione viene ignorata senza errori.
+> Hosts e firewall bloccano comunque il DNS per **qualsiasi** browser.
 
 ---
 
@@ -143,7 +158,7 @@ YouTube-Blocker/
     │   ├── auth.rs       — PIN con argon2id
     │   ├── hosts.rs      — blocco/sblocco file hosts + flush DNS
     │   ├── firewall.rs   — regole netsh per DNS-over-HTTPS
-    │   └── browsers.rs   — Group Policy DoH per Chrome/Edge/Brave/Firefox
+    │   └── browsers.rs   — Group Policy DoH per Chrome/Edge/Brave/Vivaldi/Opera/Firefox
     └── src/
         ├── i18n.tsx              — traduzioni IT/EN, LangProvider, useI18n
         ├── App.tsx               — routing tab, session lock, setup PIN
@@ -173,39 +188,6 @@ YouTube-Blocker/
 - I siti si aggiungono/rimuovono dalla tab **Siti** — le varianti `www.` e `m.` vengono aggiunte automaticamente.
 - Il PIN si gestisce dalla tab **Impostazioni**.
 - PIN dimenticato? → **Impostazioni → Reset PIN** → al prossimo avvio si reimposta.
-
----
-
-## 🔍 Verifica manuale
-
-```powershell
-# Voci nel file hosts
-Get-Content "$env:SystemRoot\System32\drivers\etc\hosts" | Select-String "YouTubeBlocker"
-
-# DNS risolve a 127.0.0.1 dopo blocco
-Resolve-DnsName youtube.com
-
-# Regola firewall attiva
-netsh advfirewall firewall show rule name="YouTubeBlocker_DoH_1_1_1_1_p443"
-
-# Policy browser Chrome
-reg query "HKLM\SOFTWARE\Policies\Google\Chrome" /v DnsOverHttpsMode
-
-# Config salvata
-Get-Content "$env:PROGRAMDATA\YouTubeBlocker\config.json"
-```
-
----
-
-## 🗺️ Roadmap
-
-- [ ] Integrazione Game Timer
-- [ ] Blocchi programmati per orario (studio, notte)
-- [ ] System tray (toggle rapido senza aprire la finestra)
-- [ ] Profili (Lavoro, Studio, Weekend)
-- [ ] Toggle block_doh separato da hosts
-- [ ] Supporto macOS (`pfctl` + `dscacheutil`)
-- [ ] Supporto Linux (`iptables`/`ufw` + `systemd-resolve`)
 
 ---
 
