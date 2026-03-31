@@ -1,6 +1,6 @@
 [package]
 name = "youtube-blocker"
-version = "1.1.0"
+version = "1.1.1"
 edition = "2021"
 authors = ["zoott28354"]
 description = "App per bloccare siti web a livello di sistema su Windows"
