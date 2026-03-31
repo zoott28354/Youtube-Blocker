@@ -14,7 +14,7 @@ pub enum ConfigError {
     NoAppData,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct BlockList {
     pub id: String,
     pub name: String,
@@ -36,36 +36,78 @@ fn default_true() -> bool {
     true
 }
 
+fn expand_roots(roots: &[&str]) -> Vec<String> {
+    let mut sites = Vec::new();
+    for root in roots {
+        sites.push((*root).to_string());
+        sites.push(format!("www.{}", root));
+        sites.push(format!("m.{}", root));
+    }
+    sites
+}
+
 pub fn predefined_lists() -> Vec<BlockList> {
     vec![
         BlockList {
             id: "builtin-youtube".into(),
-            name: "YouTube".into(),
-            sites: vec![
-                "youtube.com".into(),
-                "www.youtube.com".into(),
-                "m.youtube.com".into(),
-                "youtu.be".into(),
-                "www.youtu.be".into(),
-                "m.youtu.be".into(),
-            ],
+            name: "YouTube & Video".into(),
+            sites: expand_roots(&[
+                "youtube.com",
+                "youtu.be",
+                "youtube-nocookie.com",
+                "music.youtube.com",
+                "youtubekids.com",
+                "vimeo.com",
+                "dailymotion.com",
+                "twitch.tv",
+                "kick.com",
+            ]),
             active: true,
             builtin: true,
         },
         BlockList {
             id: "builtin-gaming".into(),
-            name: "Giochi".into(),
-            sites: vec![
-                "roblox.com".into(),
-                "www.roblox.com".into(),
-                "m.roblox.com".into(),
-                "fortnite.com".into(),
-                "www.fortnite.com".into(),
-                "epicgames.com".into(),
-                "www.epicgames.com".into(),
-                "minecraft.net".into(),
-                "www.minecraft.net".into(),
-            ],
+            name: "Browser Games".into(),
+            sites: expand_roots(&[
+                "poki.com",
+                "crazygames.com",
+                "friv.com",
+                "y8.com",
+                "kizi.com",
+                "agame.com",
+                "gamepix.com",
+                "plays.org",
+                "miniplay.com",
+                "coolmathgames.com",
+                "hoodamath.com",
+            ]),
+            active: false,
+            builtin: true,
+        },
+        BlockList {
+            id: "builtin-platforms".into(),
+            name: "Gaming Platforms".into(),
+            sites: expand_roots(&[
+                "roblox.com",
+                "fortnite.com",
+                "epicgames.com",
+                "minecraft.net",
+                "steamcommunity.com",
+            ]),
+            active: false,
+            builtin: true,
+        },
+        BlockList {
+            id: "builtin-messaging".into(),
+            name: "Chat & Messaging".into(),
+            sites: expand_roots(&[
+                "whatsapp.com",
+                "web.whatsapp.com",
+                "telegram.org",
+                "web.telegram.org",
+                "discord.com",
+                "messenger.com",
+            ]),
             active: false,
             builtin: true,
         },
@@ -80,12 +122,17 @@ pub fn predefined_lists() -> Vec<BlockList> {
                 "m.facebook.com".into(),
                 "tiktok.com".into(),
                 "www.tiktok.com".into(),
+                "m.tiktok.com".into(),
                 "x.com".into(),
                 "www.x.com".into(),
                 "twitter.com".into(),
                 "www.twitter.com".into(),
                 "snapchat.com".into(),
                 "www.snapchat.com".into(),
+                "reddit.com".into(),
+                "www.reddit.com".into(),
+                "pinterest.com".into(),
+                "www.pinterest.com".into(),
             ],
             active: false,
             builtin: true,
@@ -93,22 +140,41 @@ pub fn predefined_lists() -> Vec<BlockList> {
         BlockList {
             id: "builtin-streaming".into(),
             name: "Streaming".into(),
-            sites: vec![
-                "netflix.com".into(),
-                "www.netflix.com".into(),
-                "twitch.tv".into(),
-                "www.twitch.tv".into(),
-                "disneyplus.com".into(),
-                "www.disneyplus.com".into(),
-                "primevideo.com".into(),
-                "www.primevideo.com".into(),
-                "crunchyroll.com".into(),
-                "www.crunchyroll.com".into(),
-            ],
+            sites: expand_roots(&[
+                "netflix.com",
+                "disneyplus.com",
+                "primevideo.com",
+                "amazonvideo.com",
+                "crunchyroll.com",
+            ]),
             active: false,
             builtin: true,
         },
     ]
+}
+
+fn sync_predefined_lists(existing: &[BlockList]) -> Vec<BlockList> {
+    let defaults = predefined_lists();
+    let mut merged = Vec::new();
+
+    for default in defaults {
+        if let Some(current) = existing.iter().find(|list| list.id == default.id) {
+            merged.push(BlockList {
+                active: current.active,
+                ..default
+            });
+        } else {
+            merged.push(default);
+        }
+    }
+
+    for list in existing {
+        if !list.builtin {
+            merged.push(list.clone());
+        }
+    }
+
+    merged
 }
 
 impl Default for AppConfig {
@@ -173,6 +239,12 @@ pub fn load_config() -> Result<AppConfig, ConfigError> {
             }
         }
         cfg.lists = new_lists;
+        save_config(&cfg)?;
+    }
+
+    let synced_lists = sync_predefined_lists(&cfg.lists);
+    if synced_lists != cfg.lists {
+        cfg.lists = synced_lists;
         save_config(&cfg)?;
     }
 
