@@ -45,16 +45,6 @@ interface EditState {
   sites: string[];
 }
 
-function parseImportedDomains(raw: string): string[] {
-  const normalized = new Set<string>();
-  for (const chunk of raw.split(/[\r\n,;]+/)) {
-    for (const domain of expandDomain(chunk)) {
-      normalized.add(domain);
-    }
-  }
-  return [...normalized];
-}
-
 export default function BlockLists({
   lists,
   onToggle,
@@ -70,13 +60,7 @@ export default function BlockLists({
   const [creating, setCreating] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [showImport, setShowImport] = useState(false);
-  const [importName, setImportName] = useState("");
-  const [importText, setImportText] = useState("");
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
   const addInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function startEdit(list: BlockList) {
     setEditing({ id: list.id, name: list.name, sites: [...list.sites] });
@@ -159,34 +143,6 @@ export default function BlockLists({
     }
   }
 
-  async function handleImport() {
-    const name = importName.trim();
-    const sites = parseImportedDomains(importText);
-    if (!name) return;
-    if (sites.length === 0) {
-      setImportError(t.importNoDomains);
-      return;
-    }
-
-    setImporting(true);
-    try {
-      const list = await onCreate(name);
-      await onUpdate(list.id, name, sites);
-      setShowImport(false);
-      setImportName("");
-      setImportText("");
-      setImportError(null);
-    } finally {
-      setImporting(false);
-    }
-  }
-
-  async function handleImportFile(file: File) {
-    const text = await file.text();
-    setImportText((prev) => (prev.trim() ? `${prev}\n${text}` : text));
-    setImportError(null);
-  }
-
   // Mappa nomi builtin tradotti (i18n)
   const builtinNameMap: Record<string, string> = {
     "builtin-youtube": t.listNameYoutube,
@@ -214,75 +170,6 @@ export default function BlockLists({
 
       {lists.length === 0 && (
         <p className="text-sm text-gray-500 py-4 text-center">{t.noLists}</p>
-      )}
-
-      {showImport && (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-3">
-          <div>
-            <h3 className="text-sm font-semibold text-white">{t.importListTitle}</h3>
-            <p className="text-xs text-gray-400 mt-1">{t.importListHint}</p>
-          </div>
-
-          <input
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-            value={importName}
-            onChange={(e) => setImportName(e.target.value)}
-            placeholder={t.importListNamePlaceholder}
-          />
-
-          <textarea
-            className="w-full min-h-32 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-            value={importText}
-            onChange={(e) => {
-              setImportText(e.target.value);
-              setImportError(null);
-            }}
-            placeholder={t.importTextPlaceholder}
-          />
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".txt,.csv"
-            className="hidden"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                await handleImportFile(file);
-              }
-              e.currentTarget.value = "";
-            }}
-          />
-
-          {importError && <p className="text-xs text-red-400">{importError}</p>}
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
-            >
-              {t.importFileBtn}
-            </button>
-            <button
-              onClick={handleImport}
-              disabled={importing || !importName.trim()}
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-colors"
-            >
-              {t.importConfirmBtn}
-            </button>
-            <button
-              onClick={() => {
-                setShowImport(false);
-                setImportName("");
-                setImportText("");
-                setImportError(null);
-              }}
-              className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors"
-            >
-              {t.cancelEdit}
-            </button>
-          </div>
-        </div>
       )}
 
       {lists.map((list) => (
@@ -476,15 +363,6 @@ export default function BlockLists({
             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-colors"
           >
             {t.createBtn}
-          </button>
-          <button
-            onClick={() => {
-              setShowImport((prev) => !prev);
-              setImportError(null);
-            }}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold rounded-lg transition-colors"
-          >
-            {t.importList}
           </button>
         </div>
       </div>

@@ -20,7 +20,6 @@ Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 - 🔒 **Blocco a tre livelli** — hosts, firewall, policy browser
 - 🔑 **PIN genitore** — hash argon2id, minimo 4 caratteri
 - 📚 **Liste di blocco** — preset per video, browser games, gaming platforms, chat, social e streaming + liste personalizzate
-- 📥 **Import lista** — incolla domini o carica `.txt/.csv`, poi applica il blocco quando vuoi
 - 💾 **Blocco persistente** — resta attivo dopo chiusura app e riavvio PC
 - 🧹 **Ripristino al disinstall** — il wizard chiede se ripristinare tutto prima di rimuovere l'app
 - 🌍 **Italiano / Inglese** — toggle in header
@@ -166,7 +165,7 @@ YouTube-Blocker/
         ├── hooks/useBlocker.ts   — stato centralizzato, invoke Tauri
         └── components/
             ├── StatusCard.tsx    — badge stato, 3 indicatori, liste attive, icona
-            ├── BlockLists.tsx    — preset e liste personalizzate, toggle, edit, duplica, importa
+            ├── BlockLists.tsx    — preset e liste personalizzate, toggle, edit, duplica
             ├── PinModal.tsx      — modal setup e verifica PIN
             ├── Settings.tsx      — cambio PIN, reset PIN
             └── About.tsx         — versione, licenza, link GitHub
@@ -196,7 +195,7 @@ YouTube-Blocker/
 
 - Le liste si gestiscono dalla tab **Liste**.
 - Le preset incluse coprono video, browser games, gaming platforms, chat/messaging, social e streaming.
-- `Importa lista` salva solo la configurazione: il blocco reale parte quando premi **Blocca**.
+- Puoi anche duplicare una lista predefinita per trasformarla in una lista personalizzata.
 - In modifica, le varianti `www.` e `m.` restano visibili e modificabili come voci separate.
 - Se l'app apre in stato **Sbloccato**, le liste attive residue vengono riallineate e spente automaticamente.
 - Il PIN si gestisce dalla tab **Impostazioni**.
