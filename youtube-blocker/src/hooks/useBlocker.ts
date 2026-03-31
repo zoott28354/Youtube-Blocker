@@ -2,8 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 export interface BlockStatus {
+  os_name: string;
   hosts_blocked: boolean;
+  firewall_supported: boolean;
   firewall_active: boolean;
+  browser_policy_supported: boolean;
   browser_policy: boolean;
   block_doh_enabled: boolean;
   active_lists_count: number;

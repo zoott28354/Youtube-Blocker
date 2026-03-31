@@ -29,6 +29,10 @@ const FIREFOX_POLICY_JSON: &str =
 
 // ─── API pubblica ────────────────────────────────────────────────────────────
 
+pub fn is_browser_policy_supported() -> bool {
+    cfg!(target_os = "windows")
+}
+
 /// Verifica se almeno una policy browser è attiva (Chrome/Edge o Firefox).
 pub fn are_policies_active() -> bool {
     #[cfg(target_os = "windows")]

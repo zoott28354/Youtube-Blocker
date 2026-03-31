@@ -5,11 +5,11 @@
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2011-0078D4?logo=windows&logoColor=white)](https://github.com/zoott28354/YouTube-Blocker/releases)
 [![Release](https://img.shields.io/github/v/release/zoott28354/YouTube-Blocker)](https://github.com/zoott28354/YouTube-Blocker/releases/latest)
 
-App desktop per bloccare siti a livello di sistema su Windows.
+App desktop per bloccare siti a livello di sistema, oggi focalizzata su Windows.
 Ideale per genitori che vogliono limitare l'accesso a YouTube e altri siti sui PC dei figli.
 
-Agisce su tre livelli: **file hosts** + **regole firewall anti-DoH** + **Group Policy browser** —
-nessun bypass possibile tramite DNS-over-HTTPS.
+Su Windows agisce su tre livelli: **file hosts** + **regole firewall anti-DoH** + **Group Policy browser**.
+Sul branch `multios` e' in preparazione anche una **v1 macOS utile** basata sul file hosts, con PIN e liste, ma senza ancora parita' completa su firewall/policy browser.
 
 Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 
@@ -24,6 +24,16 @@ Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 - 🧹 **Ripristino al disinstall** — il wizard chiede se ripristinare tutto prima di rimuovere l'app
 - 🌍 **Italiano / Inglese** — toggle in header
 - 📦 **Installer perMachine** — installa per tutti gli utenti Windows
+
+## 🍎 Stato macOS
+
+Il progetto sta iniziando una portabilita' pragmatica verso macOS.
+
+- **Windows** resta il target principale con blocco a tre livelli.
+- **macOS v1 utile**: obiettivo `hosts-only`, con PIN, liste, stato coerente e UX chiara.
+- **macOS v1** non promette ancora il blocco anti-DoH equivalente a Windows.
+
+Per l'uso familiare normale questa versione avrebbe comunque valore: blocca i siti piu' comuni in modo semplice e protetto da PIN, senza vendere una falsa protezione "enterprise".
 
 ---
 

@@ -1,10 +1,16 @@
-# YouTube Blocker — Contesto per Claude
+# YouTube Blocker — Contesto per Claude / Codex Mac
 
 ## Cosa fa questo progetto
-App desktop Tauri 2 per bloccare siti a livello di sistema su Windows.
+App desktop Tauri 2 per bloccare siti a livello di sistema.
 Usecase principale: genitore blocca YouTube (e altri siti) per un figlio di 11 anni.
-Tre livelli di blocco: file `hosts` + regole Windows Firewall anti-DoH + Group Policy browser.
+Su Windows il blocco usa tre livelli: file `hosts` + regole Windows Firewall anti-DoH + Group Policy browser.
 PIN argon2id richiesto per aprire l'app e per sbloccare. Interfaccia bilingue IT/EN.
+
+### Stato branch `multios`
+- Windows resta il target principale e completo: `hosts` + firewall anti-DoH + browser policy
+- macOS v1 utile e pragmatica: `hosts` + PIN + liste + stato coerente, senza fingere parita' con Windows
+- Linux e' secondario: stessa idea di macOS, ma non e' il focus immediato
+- Se lavori dal branch `multios`, considera macOS come modalita' `hosts-only` esplicita in UI
 
 ## Stack
 - Tauri 2.x + React + TypeScript + Tailwind CSS
@@ -51,6 +57,7 @@ YouTube-Blocker/
 Non usiamo manifest UAC (non supportato da tauri-build 2.5.x in tauri.conf.json).
 Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 `Start-Process -Verb RunAs` via PowerShell nascosto (CREATE_NO_WINDOW).
+Nel branch `multios` c'e' anche un primo flusso macOS con `osascript` per rilancio con privilegi admin.
 
 ### Session lock (PIN all'apertura)
 - All'apertura dell'app, se PIN è impostato, viene mostrata una schermata di verifica PIN
@@ -70,12 +77,14 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 - Nome regole: `YouTubeBlocker_DoH_<ip>_p<porta>` (deterministico)
 - Remove-before-add: idempotente, sicuro chiamare più volte
 - Solo TCP (DoH su QUIC/UDP porta 443 non bloccato — possibile v2)
+- Oggi e' Windows-only: nel branch `multios` il backend espone anche `is_firewall_supported()`
 
 ### Browser DoH (browsers.rs)
 - Chrome/Edge/Brave/Vivaldi/Opera/Chromium: chiave registry `HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"`
 - Firefox: crea `distribution/policies.json` nella cartella di installazione con backup/restore
 - Marker `"_youtubeblocker":true` nel JSON per identificare i file creati da noi
 - are_policies_active() controlla Chrome come campione + presenza del nostro JSON Firefox
+- Oggi e' Windows-only: nel branch `multios` il backend espone anche `is_browser_policy_supported()`
 
 ### Espansione domini
 - Input utente normalizzato: strip https://, www., m., path → root domain
@@ -116,9 +125,20 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
     in LOCALAPPDATA l'utente figlio avrebbe un config separato senza PIN impostato.
   - Su Mac/Linux fallback a `dirs::data_local_dir()`
 
+### Stato protezione per OS
+- `get_status()` nel branch `multios` espone anche:
+  - `os_name`
+  - `firewall_supported`
+  - `browser_policy_supported`
+- La UI deve distinguere tra:
+  - layer attivo
+  - layer disabilitato da config
+  - layer non disponibile su quell'OS
+- Su macOS v1, se `hosts` e' attivo e gli altri layer non sono supportati, la UI puo' comunque mostrare blocco valido, ma con nota esplicita `hosts-only`
+
 ## Comandi Tauri disponibili
 ```
-get_status()             → { hosts_blocked, firewall_active, browser_policy }
+get_status()             → { hosts_blocked, firewall_active, browser_policy, os_name, firewall_supported, browser_policy_supported }
 get_sites()              → Vec<String>
 add_site(domain)         → Result<()>   // espande automaticamente www/m varianti
 remove_site(domain)      → Result<()>   // rimuove root + varianti
@@ -139,7 +159,7 @@ check_pin(pin)           → Result<()>   // solo verifica, nessun side effect (
 - **Schedule**: blocco automatico per fascia oraria (es. 15:00-18:00 studio)
 - **System tray**: toggle rapido senza aprire la finestra principale
 - **Profili**: set di regole nominati (Studio, Lavoro, Weekend)
-- **Mac/Linux**: hosts_path() già cross-platform; manca firewall (pfctl / iptables) e admin elevation
+- **Mac/Linux**: branch `multios` avvia una strategia pragmatica. macOS v1 utile = `hosts` + PIN + liste + stato coerente; firewall/policy restano futuri
 - **Toggle block_doh**: UI per abilitare/disabilitare firewall+policy separatamente dagli hosts
 
 ## Gotcha e bug noti risolti

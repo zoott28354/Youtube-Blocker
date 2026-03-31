@@ -7,9 +7,9 @@ mod firewall;
 mod hosts;
 
 use auth::{hash_pin, verify_pin};
-use browsers::{are_policies_active, disable_browser_doh, enable_browser_doh};
+use browsers::{are_policies_active, disable_browser_doh, enable_browser_doh, is_browser_policy_supported};
 use config::{config_path, load_config, save_config, AppConfig, BlockList};
-use firewall::{add_firewall_rules, are_rules_active, remove_firewall_rules};
+use firewall::{add_firewall_rules, are_rules_active, is_firewall_supported, remove_firewall_rules};
 use hosts::{block_sites, is_blocked, unblock_sites};
 use std::process::Command;
 use std::sync::Mutex;
@@ -45,12 +45,44 @@ fn relaunch_as_admin() {
         .expect("impossibile rilanciare con privilegi admin");
 }
 
+#[cfg(target_os = "macos")]
+fn is_admin() -> bool {
+    Command::new("id")
+        .arg("-u")
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim() == "0")
+        .unwrap_or(false)
+}
+
+#[cfg(target_os = "macos")]
+fn relaunch_as_admin() {
+    fn shell_escape(value: &str) -> String {
+        value.replace('\'', "'\"'\"'")
+    }
+
+    let exe = std::env::current_exe().expect("impossibile trovare eseguibile");
+    let command = format!("'{}'", shell_escape(&exe.to_string_lossy()));
+    Command::new("osascript")
+        .args([
+            "-e",
+            &format!(
+                "do shell script \"{}\" with administrator privileges",
+                command
+            ),
+        ])
+        .spawn()
+        .expect("impossibile rilanciare con privilegi admin");
+}
+
 struct AppState(Mutex<AppConfig>);
 
 #[derive(serde::Serialize)]
 struct BlockStatus {
+    os_name: &'static str,
     hosts_blocked: bool,
+    firewall_supported: bool,
     firewall_active: bool,
+    browser_policy_supported: bool,
     browser_policy: bool,
     block_doh_enabled: bool,
     active_lists_count: usize,
@@ -87,11 +119,13 @@ fn is_protection_active_for_config(cfg: &AppConfig) -> Result<bool, String> {
         return Ok(false);
     }
 
-    if cfg.block_doh {
-        Ok(are_rules_active() && are_policies_active())
-    } else {
-        Ok(true)
+    if !cfg.block_doh {
+        return Ok(true);
     }
+
+    let firewall_ok = !is_firewall_supported() || are_rules_active();
+    let browser_ok = !is_browser_policy_supported() || are_policies_active();
+    Ok(firewall_ok && browser_ok)
 }
 
 fn clear_active_lists(cfg: &mut AppConfig) {
@@ -141,11 +175,24 @@ fn get_status(state: State<AppState>) -> Result<BlockStatus, String> {
         .map(|l| l.name.clone())
         .collect();
     let hosts_blocked = is_blocked(&sites).map_err(|e| e.to_string())?;
-    let firewall_active = if cfg.block_doh { are_rules_active() } else { false };
-    let browser_policy = if cfg.block_doh { are_policies_active() } else { false };
+    let firewall_supported = is_firewall_supported();
+    let browser_policy_supported = is_browser_policy_supported();
+    let firewall_active = if cfg.block_doh && firewall_supported {
+        are_rules_active()
+    } else {
+        false
+    };
+    let browser_policy = if cfg.block_doh && browser_policy_supported {
+        are_policies_active()
+    } else {
+        false
+    };
     Ok(BlockStatus {
+        os_name: std::env::consts::OS,
         hosts_blocked,
+        firewall_supported,
         firewall_active,
+        browser_policy_supported,
         browser_policy,
         block_doh_enabled: cfg.block_doh,
         active_lists_count: active_list_names.len(),
@@ -168,8 +215,10 @@ fn block_all(state: State<AppState>) -> Result<(), String> {
         return Err("Nessuna lista attiva".into());
     }
     block_sites(&sites).map_err(|e| e.to_string())?;
-    if cfg.block_doh {
+    if cfg.block_doh && is_firewall_supported() {
         add_firewall_rules().map_err(|e| e.to_string())?;
+    }
+    if cfg.block_doh && is_browser_policy_supported() {
         disable_browser_doh();
     }
     Ok(())
@@ -184,8 +233,10 @@ fn unblock_all(pin: String, state: State<AppState>) -> Result<(), String> {
     }
     let sites = all_sites(&cfg);
     unblock_sites(&sites).map_err(|e| e.to_string())?;
-    if cfg.block_doh {
+    if cfg.block_doh && is_firewall_supported() {
         remove_firewall_rules().map_err(|e| e.to_string())?;
+    }
+    if cfg.block_doh && is_browser_policy_supported() {
         enable_browser_doh();
     }
     clear_active_lists(&mut cfg);
@@ -384,6 +435,12 @@ fn main() {
     }
 
     #[cfg(target_os = "windows")]
+    if !is_admin() {
+        relaunch_as_admin();
+        return;
+    }
+
+    #[cfg(target_os = "macos")]
     if !is_admin() {
         relaunch_as_admin();
         return;

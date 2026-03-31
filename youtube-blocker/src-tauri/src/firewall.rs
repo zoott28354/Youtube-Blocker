@@ -19,6 +19,10 @@ const DOH_SERVERS: &[&str] = &[
 const DOH_PORTS: &[&str] = &["443", "853"];
 const RULE_PREFIX: &str = "YouTubeBlocker_DoH_";
 
+pub fn is_firewall_supported() -> bool {
+    cfg!(target_os = "windows")
+}
+
 fn rule_name(ip: &str, port: &str) -> String {
     format!("{}{}_p{}", RULE_PREFIX, ip.replace('.', "_"), port)
 }

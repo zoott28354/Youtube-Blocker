@@ -7,6 +7,12 @@ Tre livelli di blocco: file `hosts` + regole Windows Firewall anti-DoH + Group P
 Il modello UI attuale e' basato su **liste di blocco** attivabili/disattivabili, con preset e liste personalizzate.
 PIN argon2id richiesto per aprire l'app e per sbloccare. Interfaccia bilingue IT/EN.
 
+### Stato branch `multios`
+- Su Windows l'obiettivo resta il blocco a tre livelli completo.
+- Su macOS la **v1 utile** e' `hosts-only`: blocco siti via file hosts, PIN, liste, stato coerente.
+- Su macOS firewall anti-DoH e browser policy non sono ancora supportati e la UI deve dichiararlo esplicitamente.
+- Linux e' secondario rispetto a macOS, ma segue la stessa filosofia: prima `hosts`, poi hardening eventuale.
+
 ## Stack
 - Tauri 2.x + React + TypeScript + Tailwind CSS
 - Rust backend in `youtube-blocker/src-tauri/src/`
@@ -55,6 +61,7 @@ YouTube-Blocker/
 Non usiamo manifest UAC (non supportato da tauri-build 2.5.x in tauri.conf.json).
 Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 `Start-Process -Verb RunAs` via PowerShell nascosto (CREATE_NO_WINDOW).
+- In `multios`, su macOS stiamo impostando un primo rilancio admin via `osascript`.
 
 ### Session lock (PIN all'apertura)
 - All'apertura dell'app, se PIN è impostato, viene mostrata una schermata di verifica PIN
@@ -74,18 +81,22 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 - Nome regole: `YouTubeBlocker_DoH_<ip>_p<porta>` (deterministico)
 - Remove-before-add: idempotente, sicuro chiamare più volte
 - Solo TCP (DoH su QUIC/UDP porta 443 non bloccato — possibile v2)
+- Per ora le regole firewall sono supportate solo su Windows; su macOS/Linux la UI deve segnalarle come non disponibili.
 
 ### Browser DoH (browsers.rs)
 - Chrome/Edge/Brave/Vivaldi/Opera/Chromium: chiave registry `HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"`
 - Firefox: crea `distribution/policies.json` nella cartella di installazione con backup/restore
 - Marker `"_youtubeblocker":true` nel JSON per identificare i file creati da noi
 - are_policies_active() controlla Chrome come campione + presenza del nostro JSON Firefox
+- Per ora queste policy sono supportate solo su Windows.
 
 ### Modello liste / stato
 - Le liste `active=true` rappresentano il blocco desiderato.
 - La schermata principale mostra `BLOCCATO` solo se le liste attive sono davvero applicate.
 - All'avvio, se la protezione reale non risulta attiva, eventuali liste rimaste `active=true` vengono spente automaticamente per riallineare la UI.
 - Dopo `unblock_all(pin)` tutte le liste vengono salvate come inattive.
+- In `multios`, lo stato espone anche se firewall/policy sono supportati sull'OS corrente.
+- Su macOS, se firewall e policy non sono supportati, il blocco `hosts` resta comunque valido e la UI lo presenta come modalita' `hosts-only`.
 
 ### Espansione domini
 - Input utente normalizzato: strip https://, www., m., path → root domain
@@ -129,8 +140,11 @@ Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 ## Comandi Tauri disponibili
 ```
 get_status()             → {
+                           os_name,
                            hosts_blocked,
+                           firewall_supported,
                            firewall_active,
+                           browser_policy_supported,
                            browser_policy,
                            block_doh_enabled,
                            active_lists_count,

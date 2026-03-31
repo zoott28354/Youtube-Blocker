@@ -11,11 +11,16 @@ interface Props {
 export default function StatusCard({ status, loading, onBlock, onUnblock }: Props) {
   const { t } = useI18n();
   const hasActiveLists = (status?.active_lists_count ?? 0) > 0;
+  const hostsOnlyMode = Boolean(
+    status && !status.firewall_supported && !status.browser_policy_supported
+  );
+  const firewallSatisfied = !status?.firewall_supported || status.firewall_active;
+  const browserSatisfied = !status?.browser_policy_supported || status.browser_policy;
   const isBlocked = Boolean(
     status &&
       hasActiveLists &&
       status.hosts_blocked &&
-      (!status.block_doh_enabled || (status.firewall_active && status.browser_policy))
+      (!status.block_doh_enabled || (firewallSatisfied && browserSatisfied))
   );
 
   return (
@@ -42,13 +47,32 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
               {(
                 [
                   [t.hosts, status.hosts_blocked],
-                  [t.firewallDoh, status.firewall_active],
-                  [t.policyBrowser, status.browser_policy],
-                ] as [string, boolean][]
-              ).map(([label, active]) => (
+                  [
+                    t.firewallDoh,
+                    status.firewall_active,
+                    status.firewall_supported,
+                  ],
+                  [
+                    t.policyBrowser,
+                    status.browser_policy,
+                    status.browser_policy_supported,
+                  ],
+                ] as [string, boolean, boolean][]
+              ).map(([label, active, supported]) => (
                 <span key={label}>
-                  <span className={active ? "text-red-400" : "text-gray-500"}>●</span>{" "}
+                  <span
+                    className={
+                      !supported
+                        ? "text-gray-600"
+                        : active
+                          ? "text-red-400"
+                          : "text-gray-500"
+                    }
+                  >
+                    ●
+                  </span>{" "}
                   {label}
+                  {!supported ? ` (${t.notAvailableShort})` : ""}
                 </span>
               ))}
             </div>
@@ -59,6 +83,12 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
                 ? status.active_list_names.join(", ")
                 : t.noActiveLists}
             </div>
+
+            {hostsOnlyMode && (
+              <p className="text-xs text-amber-300/90 max-w-md mx-auto">
+                {t.hostsOnlyMode.replace("{os}", status.os_name)}
+              </p>
+            )}
           </div>
         )}
       </div>
