@@ -34,6 +34,11 @@ function groupByRoot(sites: string[]): Record<string, string[]> {
   return groups;
 }
 
+// Estrae solo i root domain per la visualizzazione compatta
+function rootDomains(sites: string[]): string[] {
+  return Object.keys(groupByRoot(sites));
+}
+
 interface EditState {
   id: string;
   name: string;
@@ -54,12 +59,14 @@ export default function BlockLists({
   const [newListName, setNewListName] = useState("");
   const [creating, setCreating] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const addInputRef = useRef<HTMLInputElement>(null);
 
   function startEdit(list: BlockList) {
     setEditing({ id: list.id, name: list.name, sites: [...list.sites] });
     setAddInput("");
     setAddError(null);
+    setConfirmDeleteId(null);
   }
 
   function cancelEdit() {
@@ -93,7 +100,6 @@ export default function BlockLists({
 
   function removeSiteFromEdit(site: string) {
     if (!editing) return;
-    // Rimuove il root e tutte le sue varianti
     const toRemove = new Set(expandDomain(site));
     toRemove.add(site);
     setEditing({
@@ -111,10 +117,16 @@ export default function BlockLists({
     }
   }
 
-  async function handleDelete(list: BlockList) {
-    if (!window.confirm(t.confirmDeleteList)) return;
-    if (editing?.id === list.id) setEditing(null);
-    await onDelete(list.id);
+  async function handleDelete(id: string) {
+    if (editing?.id === id) setEditing(null);
+    setConfirmDeleteId(null);
+    await onDelete(id);
+  }
+
+  async function handleDuplicate(list: BlockList) {
+    const newList = await onCreate(list.name + " (copia)");
+    await onUpdate(newList.id, newList.name, [...list.sites]);
+    startEdit({ id: newList.id, name: newList.name, sites: [...list.sites] });
   }
 
   async function handleCreate() {
@@ -130,7 +142,8 @@ export default function BlockLists({
   }
 
   function siteCount(sites: string[]) {
-    const n = sites.length;
+    const roots = rootDomains(sites);
+    const n = roots.length;
     return `${n} ${n === 1 ? t.siteSingular : t.sitePlural}`;
   }
 
@@ -174,7 +187,7 @@ export default function BlockLists({
                           <span className="text-sm text-white">{root}</span>
                           {variants.length > 1 && (
                             <span className="text-xs text-gray-500 ml-2">
-                              +{variants.length - 1} varianti
+                              +{variants.length - 1}
                             </span>
                           )}
                         </div>
@@ -230,56 +243,97 @@ export default function BlockLists({
                 </button>
               </div>
             </div>
+          ) : confirmDeleteId === list.id ? (
+            /* ── Conferma eliminazione inline ── */
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm text-white">
+                {t.confirmDeleteList}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleDelete(list.id)}
+                  className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                >
+                  {t.confirmYes}
+                </button>
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition-colors"
+                >
+                  {t.confirmNo}
+                </button>
+              </div>
+            </div>
           ) : (
             /* ── Modalità visualizzazione ── */
-            <div className="flex items-center gap-3 px-4 py-3">
-              {/* Toggle */}
-              <button
-                onClick={() => handleToggle(list.id, !list.active)}
-                disabled={toggling === list.id}
-                className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${
-                  list.active ? "bg-blue-600" : "bg-gray-700"
-                } ${toggling === list.id ? "opacity-50" : ""}`}
-              >
-                <span
-                  className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                    list.active ? "translate-x-5" : "translate-x-1"
-                  }`}
-                />
-              </button>
+            <div className="px-4 py-3">
+              <div className="flex items-center gap-3">
+                {/* Toggle */}
+                <button
+                  onClick={() => handleToggle(list.id, !list.active)}
+                  disabled={toggling === list.id}
+                  className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${
+                    list.active ? "bg-blue-600" : "bg-gray-700"
+                  } ${toggling === list.id ? "opacity-50" : ""}`}
+                >
+                  <span
+                    className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                      list.active ? "translate-x-5" : "translate-x-1"
+                    }`}
+                  />
+                </button>
 
-              {/* Nome + info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-white truncate">
-                    {list.name}
-                  </span>
-                  {list.builtin && (
-                    <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
-                      {t.builtinBadge}
+                {/* Nome + info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white truncate">
+                      {list.name}
                     </span>
+                    {list.builtin && (
+                      <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
+                        {t.builtinBadge}
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-600">
+                      {siteCount(list.sites)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Azioni */}
+                <div className="flex gap-1 flex-shrink-0">
+                  {list.builtin ? (
+                    <button
+                      onClick={() => handleDuplicate(list)}
+                      className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
+                    >
+                      {t.duplicateList}
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => startEdit(list)}
+                        className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
+                      >
+                        {t.editList}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(list.id)}
+                        className="text-xs text-red-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-gray-800"
+                      >
+                        {t.deleteList}
+                      </button>
+                    </>
                   )}
                 </div>
-                <span className="text-xs text-gray-500">
-                  {siteCount(list.sites)}
-                </span>
               </div>
 
-              {/* Azioni */}
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => startEdit(list)}
-                  className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
-                >
-                  {t.editList}
-                </button>
-                <button
-                  onClick={() => handleDelete(list)}
-                  className="text-xs text-red-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-gray-800"
-                >
-                  {t.deleteList}
-                </button>
-              </div>
+              {/* Domini root visibili sotto il nome */}
+              {list.sites.length > 0 && (
+                <div className="mt-1.5 ml-[52px] text-xs text-gray-500 leading-relaxed">
+                  {rootDomains(list.sites).join(", ")}
+                </div>
+              )}
             </div>
           )}
         </div>
