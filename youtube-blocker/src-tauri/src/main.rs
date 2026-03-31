@@ -8,11 +8,12 @@ mod hosts;
 
 use auth::{hash_pin, verify_pin};
 use browsers::{are_policies_active, disable_browser_doh, enable_browser_doh};
-use config::{config_path, load_config, save_config, AppConfig};
+use config::{config_path, load_config, save_config, AppConfig, BlockList};
 use firewall::{add_firewall_rules, are_rules_active, remove_firewall_rules};
 use hosts::{block_sites, is_blocked, unblock_sites};
 use std::process::Command;
 use std::sync::Mutex;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::State;
 
 // --- Gestione privilegi admin ---
@@ -53,25 +54,26 @@ struct BlockStatus {
     browser_policy: bool,
 }
 
-// --- Comandi Tauri ---
+// --- Helper: unione siti dalle liste ---
 
-#[tauri::command]
-fn get_status(state: State<AppState>) -> Result<BlockStatus, String> {
-    let cfg = state.0.lock().unwrap();
-    let hosts_blocked = is_blocked(&cfg.sites).map_err(|e| e.to_string())?;
-    let firewall_active = if cfg.block_doh { are_rules_active() } else { false };
-    let browser_policy = if cfg.block_doh { are_policies_active() } else { false };
-    Ok(BlockStatus {
-        hosts_blocked,
-        firewall_active,
-        browser_policy,
-    })
+/// Siti delle sole liste attive — usato per block_all e get_status.
+fn active_sites(cfg: &AppConfig) -> Vec<String> {
+    cfg.lists
+        .iter()
+        .filter(|l| l.active)
+        .flat_map(|l| l.sites.iter().cloned())
+        .collect()
 }
 
-#[tauri::command]
-fn get_sites(state: State<AppState>) -> Vec<String> {
-    state.0.lock().unwrap().sites.clone()
+/// Siti di tutte le liste (attive e non) — usato per unblock_all e cleanup.
+fn all_sites(cfg: &AppConfig) -> Vec<String> {
+    cfg.lists
+        .iter()
+        .flat_map(|l| l.sites.iter().cloned())
+        .collect()
 }
+
+// --- Normalizzazione dominio ---
 
 /// Normalizza l'input e restituisce root + varianti www/m.
 /// Es. "https://www.netflix.com/it" → ["netflix.com", "www.netflix.com", "m.netflix.com"]
@@ -99,33 +101,34 @@ fn expand_domain(input: &str) -> Vec<String> {
     ]
 }
 
+// --- Comandi Tauri: stato ---
+
 #[tauri::command]
-fn add_site(domain: String, state: State<AppState>) -> Result<(), String> {
-    let mut cfg = state.0.lock().unwrap();
-    let variants = expand_domain(&domain);
-    if variants.is_empty() {
-        return Err("Dominio non valido".into());
-    }
-    for variant in variants {
-        if !cfg.sites.contains(&variant) {
-            cfg.sites.push(variant);
-        }
-    }
-    save_config(&cfg).map_err(|e| e.to_string())
+fn get_status(state: State<AppState>) -> Result<BlockStatus, String> {
+    let cfg = state.0.lock().unwrap();
+    let sites = active_sites(&cfg);
+    let hosts_blocked = is_blocked(&sites).map_err(|e| e.to_string())?;
+    let firewall_active = if cfg.block_doh { are_rules_active() } else { false };
+    let browser_policy = if cfg.block_doh { are_policies_active() } else { false };
+    Ok(BlockStatus {
+        hosts_blocked,
+        firewall_active,
+        browser_policy,
+    })
 }
 
 #[tauri::command]
-fn remove_site(domain: String, state: State<AppState>) -> Result<(), String> {
-    let mut cfg = state.0.lock().unwrap();
-    let to_remove: std::collections::HashSet<String> = expand_domain(&domain).into_iter().collect();
-    cfg.sites.retain(|s| !to_remove.contains(s));
-    save_config(&cfg).map_err(|e| e.to_string())
+fn get_sites(state: State<AppState>) -> Vec<String> {
+    active_sites(&state.0.lock().unwrap())
 }
+
+// --- Comandi Tauri: blocco ---
 
 #[tauri::command]
 fn block_all(state: State<AppState>) -> Result<(), String> {
     let cfg = state.0.lock().unwrap();
-    block_sites(&cfg.sites).map_err(|e| e.to_string())?;
+    let sites = active_sites(&cfg);
+    block_sites(&sites).map_err(|e| e.to_string())?;
     if cfg.block_doh {
         add_firewall_rules().map_err(|e| e.to_string())?;
         disable_browser_doh();
@@ -140,13 +143,116 @@ fn unblock_all(pin: String, state: State<AppState>) -> Result<(), String> {
         Some(hash) => verify_pin(&pin, hash).map_err(|e| e.to_string())?,
         None => return Err("Nessun PIN configurato".into()),
     }
-    unblock_sites(&cfg.sites).map_err(|e| e.to_string())?;
+    let sites = all_sites(&cfg);
+    unblock_sites(&sites).map_err(|e| e.to_string())?;
     if cfg.block_doh {
         remove_firewall_rules().map_err(|e| e.to_string())?;
         enable_browser_doh();
     }
     Ok(())
 }
+
+// --- Comandi Tauri: liste ---
+
+#[tauri::command]
+fn get_lists(state: State<AppState>) -> Vec<BlockList> {
+    state.0.lock().unwrap().lists.clone()
+}
+
+#[tauri::command]
+fn create_list(name: String, state: State<AppState>) -> Result<BlockList, String> {
+    let id = format!(
+        "custom-{:x}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    );
+    let list = BlockList {
+        id,
+        name,
+        sites: vec![],
+        active: false,
+        builtin: false,
+    };
+    let mut cfg = state.0.lock().unwrap();
+    cfg.lists.push(list.clone());
+    save_config(&cfg).map_err(|e| e.to_string())?;
+    Ok(list)
+}
+
+#[tauri::command]
+fn update_list(
+    id: String,
+    name: String,
+    sites: Vec<String>,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let mut cfg = state.0.lock().unwrap();
+    if let Some(list) = cfg.lists.iter_mut().find(|l| l.id == id) {
+        list.name = name;
+        list.sites = sites;
+    }
+    save_config(&cfg).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_list(id: String, state: State<AppState>) -> Result<(), String> {
+    let mut cfg = state.0.lock().unwrap();
+    cfg.lists.retain(|l| l.id != id);
+    save_config(&cfg).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn toggle_list(id: String, active: bool, state: State<AppState>) -> Result<(), String> {
+    let mut cfg = state.0.lock().unwrap();
+    if let Some(list) = cfg.lists.iter_mut().find(|l| l.id == id) {
+        list.active = active;
+    }
+    save_config(&cfg).map_err(|e| e.to_string())?;
+
+    // Se i siti erano già bloccati, aggiorna i siti bloccati nel file hosts
+    let sites = active_sites(&cfg);
+    let currently_blocked = is_blocked(&all_sites(&cfg)).unwrap_or(false);
+    if currently_blocked {
+        block_sites(&sites).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn add_site_to_list(list_id: String, domain: String, state: State<AppState>) -> Result<(), String> {
+    let variants = expand_domain(&domain);
+    if variants.is_empty() {
+        return Err("Dominio non valido".into());
+    }
+    let mut cfg = state.0.lock().unwrap();
+    if let Some(list) = cfg.lists.iter_mut().find(|l| l.id == list_id) {
+        for variant in variants {
+            if !list.sites.contains(&variant) {
+                list.sites.push(variant);
+            }
+        }
+    }
+    save_config(&cfg).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn remove_site_from_list(
+    list_id: String,
+    domain: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let to_remove: std::collections::HashSet<String> =
+        expand_domain(&domain).into_iter().collect();
+    let mut cfg = state.0.lock().unwrap();
+    if let Some(list) = cfg.lists.iter_mut().find(|l| l.id == list_id) {
+        list.sites.retain(|s| !to_remove.contains(s));
+    }
+    save_config(&cfg).map_err(|e| e.to_string())
+}
+
+// --- Comandi Tauri: PIN ---
 
 #[tauri::command]
 fn has_pin(state: State<AppState>) -> bool {
@@ -181,16 +287,6 @@ fn reset_pin(state: State<AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn open_url(url: String) {
-    #[cfg(target_os = "windows")]
-    let _ = Command::new("cmd").args(["/c", "start", "", &url]).spawn();
-    #[cfg(target_os = "macos")]
-    let _ = Command::new("open").arg(&url).spawn();
-    #[cfg(target_os = "linux")]
-    let _ = Command::new("xdg-open").arg(&url).spawn();
-}
-
-#[tauri::command]
 fn change_pin(old_pin: String, new_pin: String, state: State<AppState>) -> Result<(), String> {
     if new_pin.len() < 4 {
         return Err("Il PIN deve avere almeno 4 caratteri".into());
@@ -205,12 +301,24 @@ fn change_pin(old_pin: String, new_pin: String, state: State<AppState>) -> Resul
     save_config(&cfg).map_err(|e| e.to_string())
 }
 
-// Modalità cleanup: chiamata dal disinstallatore NSIS con --cleanup.
+// --- Comandi Tauri: utility ---
+
+#[tauri::command]
+fn open_url(url: String) {
+    #[cfg(target_os = "windows")]
+    let _ = Command::new("cmd").args(["/c", "start", "", &url]).spawn();
+    #[cfg(target_os = "macos")]
+    let _ = Command::new("open").arg(&url).spawn();
+    #[cfg(target_os = "linux")]
+    let _ = Command::new("xdg-open").arg(&url).spawn();
+}
+
+// --- Modalità cleanup (chiamata da NSIS con --cleanup) ---
+
 // Rimuove hosts, firewall, policy browser e config SENZA aprire la GUI.
-// Deve essere chiamata prima che i file vengano cancellati.
 fn run_cleanup() {
     let cfg = load_config().unwrap_or_default();
-    let _ = unblock_sites(&cfg.sites);
+    let _ = unblock_sites(&all_sites(&cfg));
     let _ = remove_firewall_rules();
     enable_browser_doh();
     if let Ok(path) = config_path() {
@@ -223,8 +331,6 @@ fn run_cleanup() {
 
 fn main() {
     // Intercetta --cleanup PRIMA di qualsiasi inizializzazione Tauri.
-    // Il disinstallatore NSIS chiama l'exe con questo flag per ripristinare
-    // hosts, firewall e policy browser prima di cancellare i file.
     let args: Vec<String> = std::env::args().collect();
     if args.get(1).map(|s| s.as_str()) == Some("--cleanup") {
         run_cleanup();
@@ -244,8 +350,13 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_status,
             get_sites,
-            add_site,
-            remove_site,
+            get_lists,
+            create_list,
+            update_list,
+            delete_list,
+            toggle_list,
+            add_site_to_list,
+            remove_site_from_list,
             block_all,
             unblock_all,
             has_pin,

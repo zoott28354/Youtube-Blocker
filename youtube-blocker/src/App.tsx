@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useBlocker } from "./hooks/useBlocker";
 import { useI18n, Lang } from "./i18n";
 import StatusCard from "./components/StatusCard";
-import SiteList from "./components/SiteList";
+import BlockLists from "./components/BlockLists";
 import PinModal from "./components/PinModal";
 import Settings from "./components/Settings";
 import About from "./components/About";
 
-type Tab = "main" | "sites" | "settings" | "about";
+type Tab = "main" | "lists" | "settings" | "about";
 
 export default function App() {
   const blocker = useBlocker();
@@ -17,7 +17,7 @@ export default function App() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "main", label: t.tabs.main },
-    { key: "sites", label: t.tabs.sites },
+    { key: "lists", label: t.tabs.lists },
     { key: "settings", label: t.tabs.settings },
     { key: "about", label: t.tabs.about },
   ];
@@ -117,11 +117,13 @@ export default function App() {
             onUnblock={() => setShowPinModal(true)}
           />
         )}
-        {tab === "sites" && (
-          <SiteList
-            sites={blocker.sites}
-            onAdd={blocker.addSite}
-            onRemove={blocker.removeSite}
+        {tab === "lists" && (
+          <BlockLists
+            lists={blocker.lists}
+            onToggle={blocker.toggleList}
+            onCreate={blocker.createList}
+            onUpdate={blocker.updateList}
+            onDelete={blocker.deleteList}
           />
         )}
         {tab === "settings" && (
@@ -140,7 +142,6 @@ export default function App() {
           onCancel={() => setShowPinModal(false)}
         />
       )}
-
     </div>
   );
 }

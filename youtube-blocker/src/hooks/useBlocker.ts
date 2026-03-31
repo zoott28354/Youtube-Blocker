@@ -7,9 +7,17 @@ export interface BlockStatus {
   browser_policy: boolean;
 }
 
+export interface BlockList {
+  id: string;
+  name: string;
+  sites: string[];
+  active: boolean;
+  builtin: boolean;
+}
+
 export function useBlocker() {
   const [status, setStatus] = useState<BlockStatus | null>(null);
-  const [sites, setSites] = useState<string[]>([]);
+  const [lists, setLists] = useState<BlockList[]>([]);
   const [hasPinSet, setHasPinSet] = useState<boolean | null>(null);
   const [isSessionUnlocked, setIsSessionUnlocked] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,13 +25,13 @@ export function useBlocker() {
 
   const refresh = useCallback(async () => {
     try {
-      const [s, siteList, pinSet] = await Promise.all([
+      const [s, listData, pinSet] = await Promise.all([
         invoke<BlockStatus>("get_status"),
-        invoke<string[]>("get_sites"),
+        invoke<BlockList[]>("get_lists"),
         invoke<boolean>("has_pin"),
       ]);
       setStatus(s);
-      setSites(siteList);
+      setLists(listData);
       setHasPinSet(pinSet);
       setError(null);
     } catch (e) {
@@ -61,17 +69,34 @@ export function useBlocker() {
     [refresh]
   );
 
-  const addSite = useCallback(
-    async (domain: string) => {
-      await invoke("add_site", { domain });
+  const createList = useCallback(
+    async (name: string): Promise<BlockList> => {
+      const list = await invoke<BlockList>("create_list", { name });
+      await refresh();
+      return list;
+    },
+    [refresh]
+  );
+
+  const updateList = useCallback(
+    async (id: string, name: string, sites: string[]) => {
+      await invoke("update_list", { id, name, sites });
       await refresh();
     },
     [refresh]
   );
 
-  const removeSite = useCallback(
-    async (domain: string) => {
-      await invoke("remove_site", { domain });
+  const deleteList = useCallback(
+    async (id: string) => {
+      await invoke("delete_list", { id });
+      await refresh();
+    },
+    [refresh]
+  );
+
+  const toggleList = useCallback(
+    async (id: string, active: boolean) => {
+      await invoke("toggle_list", { id, active });
       await refresh();
     },
     [refresh]
@@ -107,15 +132,17 @@ export function useBlocker() {
 
   return {
     status,
-    sites,
+    lists,
     hasPinSet,
     isSessionUnlocked,
     loading,
     error,
     blockAll,
     unblockAll,
-    addSite,
-    removeSite,
+    createList,
+    updateList,
+    deleteList,
+    toggleList,
     setPin,
     changePin,
     resetPin,
