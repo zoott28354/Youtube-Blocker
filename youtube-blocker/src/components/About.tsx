@@ -8,7 +8,7 @@ export default function About() {
   const [version, setVersion] = useState("...");
 
   useEffect(() => {
-    getVersion().then(setVersion).catch(() => setVersion("1.0.0"));
+    getVersion().then(setVersion).catch(() => setVersion("?"));
   }, []);
 
   return (

@@ -124,7 +124,7 @@ export default function BlockLists({
   }
 
   async function handleDuplicate(list: BlockList) {
-    const newList = await onCreate(list.name + " (copia)");
+    const newList = await onCreate(displayName(list) + " (copia)");
     await onUpdate(newList.id, newList.name, [...list.sites]);
     startEdit({ id: newList.id, name: newList.name, sites: [...list.sites] });
   }
@@ -139,6 +139,19 @@ export default function BlockLists({
     } finally {
       setCreating(false);
     }
+  }
+
+  // Mappa nomi builtin tradotti (i18n)
+  const builtinNameMap: Record<string, string> = {
+    "builtin-youtube": t.listNameYoutube,
+    "builtin-gaming": t.listNameGaming,
+    "builtin-social": t.listNameSocial,
+    "builtin-streaming": t.listNameStreaming,
+    "migrated-custom": t.listNameCustom,
+  };
+
+  function displayName(list: BlockList): string {
+    return builtinNameMap[list.id] || list.name;
   }
 
   function siteCount(sites: string[]) {
@@ -287,7 +300,7 @@ export default function BlockLists({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-white truncate">
-                      {list.name}
+                      {displayName(list)}
                     </span>
                     {list.builtin && (
                       <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
