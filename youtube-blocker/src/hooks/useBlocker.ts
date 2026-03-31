@@ -5,6 +5,9 @@ export interface BlockStatus {
   hosts_blocked: boolean;
   firewall_active: boolean;
   browser_policy: boolean;
+  block_doh_enabled: boolean;
+  active_lists_count: number;
+  active_list_names: string[];
 }
 
 export interface BlockList {

@@ -14,6 +14,8 @@ export const translations = {
     hosts: "Hosts",
     firewallDoh: "Firewall DoH",
     policyBrowser: "Policy browser",
+    activeListsLabel: "Liste attive",
+    noActiveLists: "Nessuna lista attiva",
     blockBtn: "🔒  Blocca",
     unblockBtn: "🔓  Sblocca",
     // BlockLists
@@ -44,6 +46,7 @@ export const translations = {
     noSitesInList: "Nessun sito in questa lista.",
     siteSingular: "sito",
     sitePlural: "siti",
+    siteVariantsSuffix: "varianti",
     // PinModal
     pinSetupTitle: "Imposta PIN genitore",
     pinVerifyTitle: "PIN richiesto",
@@ -88,6 +91,8 @@ export const translations = {
     hosts: "Hosts",
     firewallDoh: "Firewall DoH",
     policyBrowser: "Browser Policy",
+    activeListsLabel: "Active lists",
+    noActiveLists: "No active lists",
     blockBtn: "🔒  Block",
     unblockBtn: "🔓  Unblock",
     // BlockLists
@@ -118,6 +123,7 @@ export const translations = {
     noSitesInList: "No sites in this list.",
     siteSingular: "site",
     sitePlural: "sites",
+    siteVariantsSuffix: "variants",
     // PinModal
     pinSetupTitle: "Set parent PIN",
     pinVerifyTitle: "PIN required",

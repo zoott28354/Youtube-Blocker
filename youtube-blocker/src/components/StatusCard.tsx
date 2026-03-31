@@ -10,7 +10,13 @@ interface Props {
 
 export default function StatusCard({ status, loading, onBlock, onUnblock }: Props) {
   const { t } = useI18n();
-  const isBlocked = status?.hosts_blocked ?? false;
+  const hasActiveLists = (status?.active_lists_count ?? 0) > 0;
+  const isBlocked = Boolean(
+    status &&
+      hasActiveLists &&
+      status.hosts_blocked &&
+      (!status.block_doh_enabled || (status.firewall_active && status.browser_policy))
+  );
 
   return (
     <div className="space-y-5">
@@ -31,19 +37,29 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
         </div>
 
         {status && (
-          <div className="flex justify-center gap-4 text-xs text-gray-400 mt-1">
-            {(
-              [
-                [t.hosts, status.hosts_blocked],
-                [t.firewallDoh, status.firewall_active],
-                [t.policyBrowser, status.browser_policy],
-              ] as [string, boolean][]
-            ).map(([label, active]) => (
-              <span key={label}>
-                <span className={active ? "text-red-400" : "text-gray-500"}>●</span>{" "}
-                {label}
-              </span>
-            ))}</div>
+          <div className="space-y-3 mt-1">
+            <div className="flex justify-center gap-4 text-xs text-gray-400">
+              {(
+                [
+                  [t.hosts, status.hosts_blocked],
+                  [t.firewallDoh, status.firewall_active],
+                  [t.policyBrowser, status.browser_policy],
+                ] as [string, boolean][]
+              ).map(([label, active]) => (
+                <span key={label}>
+                  <span className={active ? "text-red-400" : "text-gray-500"}>●</span>{" "}
+                  {label}
+                </span>
+              ))}
+            </div>
+
+            <div className="text-sm text-gray-300">
+              <span className="text-gray-400">{t.activeListsLabel}: </span>
+              {status.active_list_names.length > 0
+                ? status.active_list_names.join(", ")
+                : t.noActiveLists}
+            </div>
+          </div>
         )}
       </div>
 

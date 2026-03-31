@@ -19,7 +19,7 @@ Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 
 - 🔒 **Blocco a tre livelli** — hosts, firewall, policy browser
 - 🔑 **PIN genitore** — hash argon2id, minimo 4 caratteri
-- 🌐 **Più siti** — aggiungi qualsiasi dominio (varianti `www.` e `m.` automatiche)
+- 📚 **Liste di blocco** — preset per YouTube, giochi, social e streaming + liste personalizzate
 - 💾 **Blocco persistente** — resta attivo dopo chiusura app e riavvio PC
 - 🧹 **Ripristino al disinstall** — il wizard chiede se ripristinare tutto prima di rimuovere l'app
 - 🌍 **Italiano / Inglese** — toggle in header
@@ -32,8 +32,8 @@ Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 | Operazione | Cosa succede |
 |---|---|
 | **Apertura app** | Richiede PIN — il figlio non può accedere senza |
-| **Blocca** | Aggiunge voci `127.0.0.1` nel file hosts + regole firewall outbound verso DoH + Group Policy DoH nei browser |
-| **Sblocca** | Richiede PIN → rimuove voci hosts + regole firewall + ripristina policy browser → flush DNS |
+| **Blocca** | Applica le liste attive: voci `127.0.0.1` nel file hosts + regole firewall outbound verso DoH + Group Policy DoH nei browser |
+| **Sblocca** | Richiede PIN → rimuove voci hosts + regole firewall + ripristina policy browser → flush DNS e spegne tutte le liste attive |
 
 Il blocco **persiste dopo la chiusura dell'app** e dopo il riavvio del PC.
 L'app non deve restare in esecuzione.
@@ -164,8 +164,8 @@ YouTube-Blocker/
         ├── App.tsx               — routing tab, session lock, setup PIN
         ├── hooks/useBlocker.ts   — stato centralizzato, invoke Tauri
         └── components/
-            ├── StatusCard.tsx    — badge stato, 3 indicatori, icona
-            ├── SiteList.tsx      — lista siti raggruppata, aggiunta/rimozione
+            ├── StatusCard.tsx    — badge stato, 3 indicatori, liste attive, icona
+            ├── BlockLists.tsx    — preset e liste personalizzate, toggle, edit, duplica
             ├── PinModal.tsx      — modal setup e verifica PIN
             ├── Settings.tsx      — cambio PIN, reset PIN
             └── About.tsx         — versione, licenza, link GitHub
@@ -179,13 +179,23 @@ YouTube-Blocker/
 
 ```json
 {
-  "sites": ["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be", "m.youtu.be"],
+  "lists": [
+    {
+      "id": "builtin-youtube",
+      "name": "YouTube",
+      "sites": ["youtube.com", "www.youtube.com", "m.youtube.com"],
+      "active": false,
+      "builtin": true
+    }
+  ],
   "pin_hash": "<argon2id hash>",
   "block_doh": true
 }
 ```
 
-- I siti si aggiungono/rimuovono dalla tab **Siti** — le varianti `www.` e `m.` vengono aggiunte automaticamente.
+- Le liste si gestiscono dalla tab **Liste**.
+- In modifica, le varianti `www.` e `m.` restano visibili e modificabili come voci separate.
+- Se l'app apre in stato **Sbloccato**, le liste attive residue vengono riallineate e spente automaticamente.
 - Il PIN si gestisce dalla tab **Impostazioni**.
 - PIN dimenticato? → **Impostazioni → Reset PIN** → al prossimo avvio si reimposta.
 

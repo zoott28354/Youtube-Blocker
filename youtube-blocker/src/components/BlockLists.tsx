@@ -100,11 +100,9 @@ export default function BlockLists({
 
   function removeSiteFromEdit(site: string) {
     if (!editing) return;
-    const toRemove = new Set(expandDomain(site));
-    toRemove.add(site);
     setEditing({
       ...editing,
-      sites: editing.sites.filter((s) => !toRemove.has(s)),
+      sites: editing.sites.filter((s) => s !== site),
     });
   }
 
@@ -126,7 +124,11 @@ export default function BlockLists({
   async function handleDuplicate(list: BlockList) {
     const newList = await onCreate(displayName(list) + " (copia)");
     await onUpdate(newList.id, newList.name, [...list.sites]);
-    startEdit({ id: newList.id, name: newList.name, sites: [...list.sites] });
+    // Entra in edit mode sulla nuova lista
+    setEditing({ id: newList.id, name: newList.name, sites: [...list.sites] });
+    setAddInput("");
+    setAddError(null);
+    setConfirmDeleteId(null);
   }
 
   async function handleCreate() {
@@ -190,29 +192,20 @@ export default function BlockLists({
                     {t.noSitesInList}
                   </p>
                 ) : (
-                  Object.entries(groupByRoot(editing.sites)).map(
-                    ([root, variants]) => (
-                      <div
-                        key={root}
-                        className="flex items-center justify-between bg-gray-800 rounded-lg px-3 py-1.5"
+                  editing.sites.map((site) => (
+                    <div
+                      key={site}
+                      className="flex items-center justify-between gap-3 bg-gray-800 rounded-lg px-3 py-2"
+                    >
+                      <span className="min-w-0 text-sm text-white break-all">{site}</span>
+                      <button
+                        onClick={() => removeSiteFromEdit(site)}
+                        className="text-xs text-red-400 hover:text-red-300 flex-shrink-0"
                       >
-                        <div>
-                          <span className="text-sm text-white">{root}</span>
-                          {variants.length > 1 && (
-                            <span className="text-xs text-gray-500 ml-2">
-                              +{variants.length - 1}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => removeSiteFromEdit(root)}
-                          className="text-xs text-red-400 hover:text-red-300 ml-3"
-                        >
-                          {t.removeBtn}
-                        </button>
-                      </div>
-                    )
-                  )
+                        {t.removeBtn}
+                      </button>
+                    </div>
+                  ))
                 )}
               </div>
 
@@ -280,73 +273,73 @@ export default function BlockLists({
           ) : (
             /* ── Modalità visualizzazione ── */
             <div className="px-4 py-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
                 {/* Toggle */}
                 <button
                   onClick={() => handleToggle(list.id, !list.active)}
                   disabled={toggling === list.id}
-                  className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${
+                  className={`relative mt-0.5 h-6 w-10 rounded-full transition-colors flex-shrink-0 ${
                     list.active ? "bg-blue-600" : "bg-gray-700"
                   } ${toggling === list.id ? "opacity-50" : ""}`}
                 >
                   <span
-                    className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                      list.active ? "translate-x-5" : "translate-x-1"
+                    className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform ${
+                      list.active ? "translate-x-4" : "translate-x-0"
                     }`}
                   />
                 </button>
 
                 {/* Nome + info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-white truncate">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="text-sm font-semibold text-white break-words">
                       {displayName(list)}
                     </span>
                     {list.builtin && (
-                      <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
+                      <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded whitespace-nowrap">
                         {t.builtinBadge}
                       </span>
                     )}
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs text-gray-600 whitespace-nowrap">
                       {siteCount(list.sites)}
                     </span>
                   </div>
-                </div>
 
-                {/* Azioni */}
-                <div className="flex gap-1 flex-shrink-0">
-                  {list.builtin ? (
-                    <button
-                      onClick={() => handleDuplicate(list)}
-                      className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
-                    >
-                      {t.duplicateList}
-                    </button>
-                  ) : (
-                    <>
+                  {/* Domini root visibili sotto il nome */}
+                  {list.sites.length > 0 && (
+                    <div className="mt-1.5 text-xs text-gray-500 leading-relaxed break-words">
+                      {rootDomains(list.sites).join(", ")}
+                    </div>
+                  )}
+
+                  {/* Azioni */}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {list.builtin ? (
                       <button
-                        onClick={() => startEdit(list)}
+                        onClick={() => handleDuplicate(list)}
                         className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
                       >
-                        {t.editList}
+                        {t.duplicateList}
                       </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(list.id)}
-                        className="text-xs text-red-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-gray-800"
-                      >
-                        {t.deleteList}
-                      </button>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => startEdit(list)}
+                          className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
+                        >
+                          {t.editList}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(list.id)}
+                          className="text-xs text-red-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-gray-800"
+                        >
+                          {t.deleteList}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Domini root visibili sotto il nome */}
-              {list.sites.length > 0 && (
-                <div className="mt-1.5 ml-[52px] text-xs text-gray-500 leading-relaxed">
-                  {rootDomains(list.sites).join(", ")}
-                </div>
-              )}
             </div>
           )}
         </div>

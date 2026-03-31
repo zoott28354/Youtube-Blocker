@@ -66,17 +66,51 @@ fn remove_our_section(lines: Vec<String>) -> Vec<String> {
     result
 }
 
+fn blocked_domains_from_content(content: &str) -> std::collections::HashSet<String> {
+    let mut blocked = std::collections::HashSet::new();
+    let mut in_section = false;
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed == SECTION_START {
+            in_section = true;
+            continue;
+        }
+        if trimmed == SECTION_END {
+            in_section = false;
+            continue;
+        }
+
+        if in_section {
+            let mut parts = trimmed.split_whitespace();
+            if let (Some(ip), Some(domain), None) = (parts.next(), parts.next(), parts.next()) {
+                if ip == "127.0.0.1" {
+                    blocked.insert(domain.to_string());
+                }
+            }
+            continue;
+        }
+
+        if let Some(domain) = trimmed.strip_prefix("127.0.0.1 ") {
+            // Retrocompatibilita' con il vecchio formato senza sezione dedicata.
+            if !domain.contains(char::is_whitespace) && !domain.starts_with('#') {
+                blocked.insert(domain.to_string());
+            }
+        }
+    }
+
+    blocked
+}
+
 /// True solo se TUTTI i domini hanno una voce 127.0.0.1 nel file hosts.
 pub fn is_blocked(sites: &[String]) -> Result<bool, HostsError> {
+    if sites.is_empty() {
+        return Ok(false);
+    }
+
     let content = fs::read_to_string(hosts_path())?;
-    Ok(sites.iter().all(|domain| {
-        content.lines().any(|line| {
-            let t = line.trim();
-            !t.starts_with('#')
-                && t.contains("127.0.0.1")
-                && t.contains(domain.as_str())
-        })
-    }))
+    let blocked = blocked_domains_from_content(&content);
+    Ok(sites.iter().all(|domain| blocked.contains(domain)))
 }
 
 /// Aggiunge (o riscrive) la sezione YouTubeBlocker nel file hosts.

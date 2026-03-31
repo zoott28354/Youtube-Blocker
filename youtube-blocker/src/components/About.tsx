@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { useI18n } from "../i18n";
 
@@ -8,7 +7,7 @@ export default function About() {
   const [version, setVersion] = useState("...");
 
   useEffect(() => {
-    getVersion().then(setVersion).catch(() => setVersion("?"));
+    invoke<string>("get_app_version").then(setVersion).catch(() => setVersion("?"));
   }, []);
 
   return (

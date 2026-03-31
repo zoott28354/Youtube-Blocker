@@ -52,6 +52,9 @@ struct BlockStatus {
     hosts_blocked: bool,
     firewall_active: bool,
     browser_policy: bool,
+    block_doh_enabled: bool,
+    active_lists_count: usize,
+    active_list_names: Vec<String>,
 }
 
 // --- Helper: unione siti dalle liste ---
@@ -71,6 +74,30 @@ fn all_sites(cfg: &AppConfig) -> Vec<String> {
         .iter()
         .flat_map(|l| l.sites.iter().cloned())
         .collect()
+}
+
+fn is_protection_active_for_config(cfg: &AppConfig) -> Result<bool, String> {
+    let sites = active_sites(cfg);
+    if sites.is_empty() {
+        return Ok(false);
+    }
+
+    let hosts_blocked = is_blocked(&sites).map_err(|e| e.to_string())?;
+    if !hosts_blocked {
+        return Ok(false);
+    }
+
+    if cfg.block_doh {
+        Ok(are_rules_active() && are_policies_active())
+    } else {
+        Ok(true)
+    }
+}
+
+fn clear_active_lists(cfg: &mut AppConfig) {
+    for list in &mut cfg.lists {
+        list.active = false;
+    }
 }
 
 // --- Normalizzazione dominio ---
@@ -107,6 +134,12 @@ fn expand_domain(input: &str) -> Vec<String> {
 fn get_status(state: State<AppState>) -> Result<BlockStatus, String> {
     let cfg = state.0.lock().unwrap();
     let sites = active_sites(&cfg);
+    let active_list_names: Vec<String> = cfg
+        .lists
+        .iter()
+        .filter(|l| l.active)
+        .map(|l| l.name.clone())
+        .collect();
     let hosts_blocked = is_blocked(&sites).map_err(|e| e.to_string())?;
     let firewall_active = if cfg.block_doh { are_rules_active() } else { false };
     let browser_policy = if cfg.block_doh { are_policies_active() } else { false };
@@ -114,6 +147,9 @@ fn get_status(state: State<AppState>) -> Result<BlockStatus, String> {
         hosts_blocked,
         firewall_active,
         browser_policy,
+        block_doh_enabled: cfg.block_doh,
+        active_lists_count: active_list_names.len(),
+        active_list_names,
     })
 }
 
@@ -128,6 +164,9 @@ fn get_sites(state: State<AppState>) -> Vec<String> {
 fn block_all(state: State<AppState>) -> Result<(), String> {
     let cfg = state.0.lock().unwrap();
     let sites = active_sites(&cfg);
+    if sites.is_empty() {
+        return Err("Nessuna lista attiva".into());
+    }
     block_sites(&sites).map_err(|e| e.to_string())?;
     if cfg.block_doh {
         add_firewall_rules().map_err(|e| e.to_string())?;
@@ -138,7 +177,7 @@ fn block_all(state: State<AppState>) -> Result<(), String> {
 
 #[tauri::command]
 fn unblock_all(pin: String, state: State<AppState>) -> Result<(), String> {
-    let cfg = state.0.lock().unwrap();
+    let mut cfg = state.0.lock().unwrap();
     match &cfg.pin_hash {
         Some(hash) => verify_pin(&pin, hash).map_err(|e| e.to_string())?,
         None => return Err("Nessun PIN configurato".into()),
@@ -149,6 +188,8 @@ fn unblock_all(pin: String, state: State<AppState>) -> Result<(), String> {
         remove_firewall_rules().map_err(|e| e.to_string())?;
         enable_browser_doh();
     }
+    clear_active_lists(&mut cfg);
+    save_config(&cfg).map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -313,6 +354,11 @@ fn open_url(url: String) {
     let _ = Command::new("xdg-open").arg(&url).spawn();
 }
 
+#[tauri::command]
+fn get_app_version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
+
 // --- Modalità cleanup (chiamata da NSIS con --cleanup) ---
 
 // Rimuove hosts, firewall, policy browser e config SENZA aprire la GUI.
@@ -343,7 +389,14 @@ fn main() {
         return;
     }
 
-    let config = load_config().unwrap_or_default();
+    let mut config = load_config().unwrap_or_default();
+    if !is_protection_active_for_config(&config).unwrap_or(false) {
+        let had_active_lists = config.lists.iter().any(|list| list.active);
+        if had_active_lists {
+            clear_active_lists(&mut config);
+            let _ = save_config(&config);
+        }
+    }
 
     tauri::Builder::default()
         .manage(AppState(Mutex::new(config)))
@@ -365,6 +418,7 @@ fn main() {
             reset_pin,
             check_pin,
             open_url,
+            get_app_version,
         ])
         .run(tauri::generate_context!())
         .expect("Errore avvio applicazione Tauri");
