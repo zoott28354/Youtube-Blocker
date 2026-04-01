@@ -1,5 +1,7 @@
 # Rust / Tauri (target spostato fuori da src-tauri/ via CARGO_TARGET_DIR nei bat)
 youtube-blocker/target/
+youtube-blocker/src-tauri/target/
+youtube-blocker/src-tauri/gen/schemas/macOS-schema.json
 
 # Node
 youtube-blocker/node_modules/

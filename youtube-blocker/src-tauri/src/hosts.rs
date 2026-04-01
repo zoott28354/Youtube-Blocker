@@ -11,6 +11,9 @@ const BLOCK_MARKER:  &str = "# YouTubeBlocker"; // mantenuto per retrocompatibil
 pub enum HostsError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+    #[cfg(target_os = "macos")]
+    #[error("Comando privilegiato fallito: {0}")]
+    CommandFailed(String),
 }
 
 pub fn hosts_path() -> PathBuf {
@@ -39,6 +42,59 @@ fn flush_dns() {
     {
         let _ = Command::new("systemd-resolve").args(["--flush-caches"]).output();
         let _ = Command::new("service").args(["nscd", "restart"]).output();
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn shell_escape(value: &str) -> String {
+    value.replace('\'', "'\"'\"'")
+}
+
+#[cfg(target_os = "macos")]
+fn write_hosts_with_privileges(content: &str) -> Result<(), HostsError> {
+    let path = hosts_path();
+    let temp_path = std::env::temp_dir().join("youtube-blocker-hosts.tmp");
+    fs::write(&temp_path, content)?;
+
+    let command = format!(
+        "cp '{}' '{}' && dscacheutil -flushcache && killall -HUP mDNSResponder",
+        shell_escape(&temp_path.to_string_lossy()),
+        shell_escape(&path.to_string_lossy()),
+    );
+
+    let output = Command::new("osascript")
+        .args([
+            "-e",
+            &format!(
+                "do shell script \"{}\" with administrator privileges",
+                command.replace('\\', "\\\\").replace('"', "\\\"")
+            ),
+        ])
+        .output()?;
+
+    let _ = fs::remove_file(&temp_path);
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let details = if !stderr.is_empty() { stderr } else { stdout };
+        Err(HostsError::CommandFailed(details))
+    }
+}
+
+fn write_hosts_content(content: &str) -> Result<(), HostsError> {
+    #[cfg(target_os = "macos")]
+    {
+        return write_hosts_with_privileges(content);
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        fs::write(hosts_path(), content)?;
+        flush_dns();
+        Ok(())
     }
 }
 
@@ -139,9 +195,7 @@ pub fn block_sites(sites: &[String]) -> Result<(), HostsError> {
     base.push(SECTION_END.to_string());
 
     let eol = if cfg!(target_os = "windows") { "\r\n" } else { "\n" };
-    fs::write(&path, base.join(eol) + eol)?;
-    flush_dns();
-    Ok(())
+    write_hosts_content(&(base.join(eol) + eol))
 }
 
 /// Rimuove la sezione YouTubeBlocker dal file hosts.
@@ -161,7 +215,5 @@ pub fn unblock_sites(sites: &[String]) -> Result<(), HostsError> {
     filtered.retain(|l| !legacy.contains(l.trim()));
 
     let eol = if cfg!(target_os = "windows") { "\r\n" } else { "\n" };
-    fs::write(&path, filtered.join(eol) + eol)?;
-    flush_dns();
-    Ok(())
+    write_hosts_content(&(filtered.join(eol) + eol))
 }

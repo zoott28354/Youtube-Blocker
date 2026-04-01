@@ -4,9 +4,12 @@
 /// Firefox: crea/rimuove distribution/policies.json nella cartella di installazione.
 ///
 /// Tutte le operazioni sono best-effort (il browser potrebbe non essere installato).
+#[cfg(target_os = "windows")]
 use std::path::{Path, PathBuf};
+#[cfg(target_os = "windows")]
 use std::process::Command;
 
+#[cfg(target_os = "windows")]
 const CHROMIUM_POLICY_KEYS: &[&str] = &[
     r"HKLM\SOFTWARE\Policies\Google\Chrome",
     r"HKLM\SOFTWARE\Policies\Microsoft\Edge",
@@ -16,14 +19,17 @@ const CHROMIUM_POLICY_KEYS: &[&str] = &[
     r"HKLM\SOFTWARE\Policies\Chromium",
 ];
 
+#[cfg(target_os = "windows")]
 const FIREFOX_INSTALL_DIRS: &[&str] = &[
     r"C:\Program Files\Mozilla Firefox",
     r"C:\Program Files (x86)\Mozilla Firefox",
 ];
 
 /// Marker nel JSON per riconoscere il file creato da noi.
+#[cfg(target_os = "windows")]
 const YOUTUBEBLOCKER_MARKER: &str = "\"_youtubeblocker\":true";
 
+#[cfg(target_os = "windows")]
 const FIREFOX_POLICY_JSON: &str =
     r#"{"policies":{"DNSOverHTTPS":{"Enabled":false,"Locked":true}},"_youtubeblocker":true}"#;
 
@@ -88,6 +94,7 @@ pub fn enable_browser_doh() {
 
 // ─── Chromium (Chrome / Edge / Brave) ───────────────────────────────────────
 
+#[cfg(target_os = "windows")]
 fn set_chromium_doh(allow: bool) {
     for &key in CHROMIUM_POLICY_KEYS {
         if allow {
@@ -110,6 +117,7 @@ fn set_chromium_doh(allow: bool) {
 
 // ─── Firefox ─────────────────────────────────────────────────────────────────
 
+#[cfg(target_os = "windows")]
 fn firefox_dist_dir() -> Option<PathBuf> {
     for &dir in FIREFOX_INSTALL_DIRS {
         let p = Path::new(dir);
@@ -120,6 +128,7 @@ fn firefox_dist_dir() -> Option<PathBuf> {
     None
 }
 
+#[cfg(target_os = "windows")]
 fn set_firefox_doh(allow: bool) {
     let Some(dist_dir) = firefox_dist_dir() else {
         return; // Firefox non installato
