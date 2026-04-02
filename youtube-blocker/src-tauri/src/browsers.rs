@@ -6,6 +6,8 @@
 ///
 /// Tutte le operazioni sono best-effort (il browser potrebbe non essere installato).
 use std::path::{Path, PathBuf};
+
+#[cfg(target_os = "windows")]
 use std::process::Command;
 
 // ─── Costanti Windows ───────────────────────────────────────────────────────
@@ -74,7 +76,6 @@ pub fn is_browser_policy_supported() -> bool {
 pub fn are_policies_active() -> bool {
     #[cfg(target_os = "windows")]
     {
-        // Controlla la chiave Chrome come campione
         let output = Command::new("reg")
             .args([
                 "query",
@@ -88,7 +89,6 @@ pub fn are_policies_active() -> bool {
                 return true;
             }
         }
-        // Controlla Firefox policies.json
         if let Some(dist_dir) = firefox_dist_dir() {
             let policy_path = dist_dir.join("policies.json");
             if let Ok(content) = std::fs::read_to_string(&policy_path) {
@@ -102,7 +102,6 @@ pub fn are_policies_active() -> bool {
 
     #[cfg(target_os = "macos")]
     {
-        // Controlla Chrome come campione
         let plist_path = Path::new(MANAGED_PREFS_DIR)
             .join(format!("{}.plist", CHROMIUM_MANAGED_PREF_BUNDLES[0]));
         if let Ok(content) = std::fs::read_to_string(&plist_path) {
@@ -110,7 +109,6 @@ pub fn are_policies_active() -> bool {
                 return true;
             }
         }
-        // Controlla Firefox policies.json
         if let Some(dist_dir) = firefox_dist_dir() {
             let policy_path = dist_dir.join("policies.json");
             if let Ok(content) = std::fs::read_to_string(&policy_path) {
@@ -127,7 +125,6 @@ pub fn are_policies_active() -> bool {
 }
 
 /// Disabilita DoH in Chrome, Edge, Brave, Firefox, ecc.
-/// Chiamato durante il blocco (se block_doh è abilitato).
 pub fn disable_browser_doh() {
     #[cfg(target_os = "windows")]
     {
@@ -142,7 +139,6 @@ pub fn disable_browser_doh() {
 }
 
 /// Ripristina le impostazioni DoH dei browser.
-/// Chiamato durante lo sblocco.
 pub fn enable_browser_doh() {
     #[cfg(target_os = "windows")]
     {
@@ -189,7 +185,6 @@ fn set_chromium_doh_macos(allow: bool) {
     for &bundle in CHROMIUM_MANAGED_PREF_BUNDLES {
         let plist_path = managed_dir.join(format!("{}.plist", bundle));
         if allow {
-            // Rimuovi solo se contiene il nostro contenuto
             if let Ok(content) = std::fs::read_to_string(&plist_path) {
                 if content.contains("DnsOverHttpsMode") {
                     let _ = std::fs::remove_file(&plist_path);
@@ -222,14 +217,13 @@ fn firefox_dist_dir() -> Option<PathBuf> {
 
 fn set_firefox_doh(allow: bool) {
     let Some(dist_dir) = firefox_dist_dir() else {
-        return; // Firefox non installato
+        return;
     };
 
     let policy_path = dist_dir.join("policies.json");
     let backup_path = dist_dir.join("policies.json.siteblocker.bak");
 
     if allow {
-        // Ripristina: rimuovi il nostro file e, se esiste, rimetti il backup
         if let Ok(content) = std::fs::read_to_string(&policy_path) {
             if content.contains(YOUTUBEBLOCKER_MARKER) {
                 if backup_path.exists() {
@@ -240,11 +234,9 @@ fn set_firefox_doh(allow: bool) {
             }
         }
     } else {
-        // Blocca: crea la dir, fai backup se esiste un policies.json pre-esistente
         let _ = std::fs::create_dir_all(&dist_dir);
         if policy_path.exists() {
             let content = std::fs::read_to_string(&policy_path).unwrap_or_default();
-            // Non sovrascrivere un backup già esistente; non toccare file già nostri
             if !content.contains(YOUTUBEBLOCKER_MARKER) && !backup_path.exists() {
                 let _ = std::fs::copy(&policy_path, &backup_path);
             }

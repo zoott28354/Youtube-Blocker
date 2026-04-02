@@ -82,7 +82,7 @@ export const translations = {
     resetPinConfirm: "Sei sicuro? Il PIN verrà rimosso.",
     resetPinDone: "PIN rimosso. Riavvia l'app per impostarne uno nuovo.",
     // About
-    aboutDescription: "App desktop per bloccare siti a livello di sistema. Pensata per genitori che vogliono limitare l'accesso a YouTube e altri siti per i propri figli. Organizza i siti in liste di blocco nominate, con liste predefinite per YouTube, giochi, social e streaming.",
+    aboutDescription: "App desktop per bloccare siti a livello di sistema. Su Windows punta al blocco completo con hosts, firewall e policy browser; su macOS la v1 e' pragmatica e usa il file hosts con PIN e liste. Pensata per genitori che vogliono limitare l'accesso a YouTube e altri siti per i propri figli.",
     aboutLicense: "Licenza MIT",
     aboutViewOnGithub: "Vedi su GitHub",
   },
@@ -165,7 +165,7 @@ export const translations = {
     resetPinConfirm: "Are you sure? The PIN will be removed.",
     resetPinDone: "PIN removed. Restart the app to set a new one.",
     // About
-    aboutDescription: "Desktop app to block websites at system level. Built for parents who want to limit their children's access to YouTube and other sites. Organize sites into named block lists, with built-in lists for YouTube, games, social media and streaming.",
+    aboutDescription: "Desktop app to block websites at system level. On Windows it aims for full blocking with hosts, firewall and browser policies; on macOS, the first useful version is pragmatic and relies on the hosts file plus PIN and block lists. Built for parents who want to limit their children's access to YouTube and other sites.",
     aboutLicense: "MIT License",
     aboutViewOnGithub: "View on GitHub",
   },

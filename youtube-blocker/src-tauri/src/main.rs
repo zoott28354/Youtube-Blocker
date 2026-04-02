@@ -45,35 +45,6 @@ fn relaunch_as_admin() {
         .expect("impossibile rilanciare con privilegi admin");
 }
 
-#[cfg(target_os = "macos")]
-fn is_admin() -> bool {
-    Command::new("id")
-        .arg("-u")
-        .output()
-        .map(|o| String::from_utf8_lossy(&o.stdout).trim() == "0")
-        .unwrap_or(false)
-}
-
-#[cfg(target_os = "macos")]
-fn relaunch_as_admin() {
-    fn shell_escape(value: &str) -> String {
-        value.replace('\'', "'\"'\"'")
-    }
-
-    let exe = std::env::current_exe().expect("impossibile trovare eseguibile");
-    let command = format!("'{}'", shell_escape(&exe.to_string_lossy()));
-    Command::new("osascript")
-        .args([
-            "-e",
-            &format!(
-                "do shell script \"{}\" with administrator privileges",
-                command
-            ),
-        ])
-        .spawn()
-        .expect("impossibile rilanciare con privilegi admin");
-}
-
 struct AppState(Mutex<AppConfig>);
 
 #[derive(serde::Serialize)]
@@ -455,12 +426,6 @@ fn main() {
     }
 
     #[cfg(target_os = "windows")]
-    if !is_admin() {
-        relaunch_as_admin();
-        return;
-    }
-
-    #[cfg(target_os = "macos")]
     if !is_admin() {
         relaunch_as_admin();
         return;
