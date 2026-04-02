@@ -1,0 +1,96 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: youtube-blocker/src-tauri
+
+      - name: Install frontend dependencies
+        working-directory: youtube-blocker
+        run: npm ci
+
+      - name: Build Tauri (Windows)
+        working-directory: youtube-blocker
+        run: npx tauri build
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: youtube-blocker/src-tauri/target/release/bundle/nsis/*.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: youtube-blocker/src-tauri
+
+      - name: Install frontend dependencies
+        working-directory: youtube-blocker
+        run: npm ci
+
+      - name: Build Tauri (macOS)
+        working-directory: youtube-blocker
+        run: npx tauri build
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: youtube-blocker/src-tauri/target/release/bundle/dmg/*.dmg
+
+  release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f -name '*.exe' -o -name '*.dmg'
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/windows-installer/*.exe
+            artifacts/macos-dmg/*.dmg
+          generate_release_notes: true
