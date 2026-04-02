@@ -10,7 +10,7 @@ use auth::{hash_pin, verify_pin};
 use browsers::{are_policies_active, disable_browser_doh, enable_browser_doh};
 use config::{config_path, load_config, save_config, AppConfig, BlockList};
 use firewall::{add_firewall_rules, are_rules_active, remove_firewall_rules};
-use hosts::{block_sites, is_blocked, unblock_sites};
+use hosts::{block_sites, has_block_section, is_blocked, unblock_sites};
 use std::process::Command;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -156,7 +156,11 @@ fn get_status(state: State<AppState>) -> Result<BlockStatus, String> {
         .filter(|l| l.active)
         .map(|l| l.name.clone())
         .collect();
-    let hosts_blocked = is_blocked(&sites).map_err(|e| e.to_string())?;
+    let hosts_blocked = if sites.is_empty() {
+        has_block_section().map_err(|e| e.to_string())?
+    } else {
+        is_blocked(&sites).map_err(|e| e.to_string())?
+    };
     let firewall_active = if cfg.block_doh { are_rules_active() } else { false };
     let browser_policy = if cfg.block_doh { are_policies_active() } else { false };
     Ok(BlockStatus {

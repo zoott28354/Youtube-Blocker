@@ -21,6 +21,7 @@ export const translations = {
     // BlockLists
     listsTitle: "Le mie liste",
     listsHint: "Attiva le liste da bloccare, poi premi Blocca nella tab Stato, oppure duplica una lista per farne una personalizzata.",
+    listsLockedHint: "Sblocca prima di modificare le liste.",
     newList: "+ Nuova lista",
     newListNamePlaceholder: "Nome nuova lista...",
     createBtn: "Crea",
@@ -101,6 +102,7 @@ export const translations = {
     // BlockLists
     listsTitle: "My lists",
     listsHint: "Enable the lists to block, then press Block in the Status tab, or duplicate a list to turn it into a custom one.",
+    listsLockedHint: "Unblock first to change the lists.",
     newList: "+ New list",
     newListNamePlaceholder: "New list name...",
     createBtn: "Create",

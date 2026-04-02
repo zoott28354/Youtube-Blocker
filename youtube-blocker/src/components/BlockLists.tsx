@@ -4,6 +4,7 @@ import { useI18n } from "../i18n";
 
 interface Props {
   lists: BlockList[];
+  blocked: boolean;
   onToggle: (id: string, active: boolean) => Promise<void>;
   onCreate: (name: string) => Promise<BlockList>;
   onUpdate: (id: string, name: string, sites: string[]) => Promise<void>;
@@ -68,6 +69,7 @@ interface EditState {
 
 export default function BlockLists({
   lists,
+  blocked,
   onToggle,
   onCreate,
   onUpdate,
@@ -194,6 +196,10 @@ export default function BlockLists({
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-500">{t.listsHint}</p>
+
+      {blocked && (
+        <p className="text-xs text-amber-400">{t.listsLockedHint}</p>
+      )}
 
       {/* Crea nuova lista */}
       <div className="border-b border-gray-800 pb-3">
@@ -326,10 +332,10 @@ export default function BlockLists({
                 {/* Toggle */}
                 <button
                   onClick={() => handleToggle(list.id, !list.active)}
-                  disabled={toggling === list.id}
+                  disabled={blocked || toggling === list.id}
                   className={`relative mt-0.5 h-6 w-10 rounded-full transition-colors flex-shrink-0 ${
                     list.active ? "bg-blue-600" : "bg-gray-700"
-                  } ${toggling === list.id ? "opacity-50" : ""}`}
+                  } ${blocked || toggling === list.id ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <span
                     className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform ${

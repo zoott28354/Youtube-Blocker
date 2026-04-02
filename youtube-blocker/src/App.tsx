@@ -120,6 +120,12 @@ export default function App() {
         {tab === "lists" && (
           <BlockLists
             lists={blocker.lists}
+            blocked={Boolean(
+              blocker.status &&
+                blocker.status.hosts_blocked &&
+                (!blocker.status.block_doh_enabled ||
+                  (blocker.status.firewall_active && blocker.status.browser_policy))
+            )}
             onToggle={blocker.toggleList}
             onCreate={blocker.createList}
             onUpdate={blocker.updateList}

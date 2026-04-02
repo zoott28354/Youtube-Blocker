@@ -10,10 +10,8 @@ interface Props {
 
 export default function StatusCard({ status, loading, onBlock, onUnblock }: Props) {
   const { t } = useI18n();
-  const hasActiveLists = (status?.active_lists_count ?? 0) > 0;
   const isBlocked = Boolean(
     status &&
-      hasActiveLists &&
       status.hosts_blocked &&
       (!status.block_doh_enabled || (status.firewall_active && status.browser_policy))
   );

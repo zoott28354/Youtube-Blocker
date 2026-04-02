@@ -105,6 +105,26 @@ fn blocked_domains_from_content(content: &str) -> std::collections::HashSet<Stri
     blocked
 }
 
+/// True se la sezione YouTubeBlocker esiste nel file hosts con almeno una voce.
+pub fn has_block_section() -> Result<bool, HostsError> {
+    let content = fs::read_to_string(hosts_path())?;
+    let mut in_section = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed == SECTION_START {
+            in_section = true;
+            continue;
+        }
+        if trimmed == SECTION_END {
+            return Ok(in_section);
+        }
+        if in_section && trimmed.starts_with("127.0.0.1 ") {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
 /// True solo se TUTTI i domini hanno una voce 127.0.0.1 nel file hosts.
 pub fn is_blocked(sites: &[String]) -> Result<bool, HostsError> {
     if sites.is_empty() {
