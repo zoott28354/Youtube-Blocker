@@ -122,7 +122,7 @@ export default function BlockLists({
   }
 
   async function handleDuplicate(list: BlockList) {
-    const newList = await onCreate(displayName(list) + " (copia)");
+    const newList = await onCreate(displayName(list) + " " + t.duplicateSuffix);
     await onUpdate(newList.id, newList.name, [...list.sites]);
     // Entra in edit mode sulla nuova lista
     setEditing({ id: newList.id, name: newList.name, sites: [...list.sites] });
