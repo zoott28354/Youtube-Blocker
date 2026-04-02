@@ -28,7 +28,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": ["nsis", "dmg"],
     "publisher": "zoott28354",
     "copyright": "Copyright © 2025 zoott28354. MIT License.",
     "windows": {
