@@ -185,15 +185,41 @@ export default function BlockLists({
     return `${n} ${n === 1 ? t.siteSingular : t.sitePlural}`;
   }
 
+  // Ordina: custom/duplicate in alto, builtin in basso
+  const sortedLists = [...lists].sort((a, b) => {
+    if (a.builtin === b.builtin) return 0;
+    return a.builtin ? 1 : -1;
+  });
+
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-500">{t.listsHint}</p>
+
+      {/* Crea nuova lista */}
+      <div className="border-b border-gray-800 pb-3">
+        <div className="flex gap-2">
+          <input
+            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            value={newListName}
+            onChange={(e) => setNewListName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            placeholder={t.newListNamePlaceholder}
+          />
+          <button
+            onClick={handleCreate}
+            disabled={creating || !newListName.trim()}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-colors"
+          >
+            {t.createBtn}
+          </button>
+        </div>
+      </div>
 
       {lists.length === 0 && (
         <p className="text-sm text-gray-500 py-4 text-center">{t.noLists}</p>
       )}
 
-      {lists.map((list) => (
+      {sortedLists.map((list) => (
         <div key={list.id} className="bg-gray-900 rounded-xl overflow-hidden">
           {editing?.id === list.id ? (
             /* ── Modalità modifica ── */
@@ -368,25 +394,6 @@ export default function BlockLists({
         </div>
       ))}
 
-      {/* Crea nuova lista */}
-      <div className="border-t border-gray-800 pt-3">
-        <div className="flex gap-2">
-          <input
-            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-            value={newListName}
-            onChange={(e) => setNewListName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-            placeholder={t.newListNamePlaceholder}
-          />
-          <button
-            onClick={handleCreate}
-            disabled={creating || !newListName.trim()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-colors"
-          >
-            {t.createBtn}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
