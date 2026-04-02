@@ -36,12 +36,21 @@ fn default_true() -> bool {
     true
 }
 
+/// Prefissi sottodominio comuni (locale, mobile, www).
+const SUBDOMAIN_PREFIXES: &[&str] = &[
+    "www", "m",
+    "it", "en", "fr", "de", "es", "pt", "nl", "ru", "pl", "tr",
+    "ja", "ko", "zh", "ar", "hi", "th", "vi", "id",
+    "sv", "da", "no", "fi", "cs", "el", "ro", "hu", "bg", "uk", "hr",
+];
+
 fn expand_roots(roots: &[&str]) -> Vec<String> {
     let mut sites = Vec::new();
     for root in roots {
         sites.push((*root).to_string());
-        sites.push(format!("www.{}", root));
-        sites.push(format!("m.{}", root));
+        for prefix in SUBDOMAIN_PREFIXES {
+            sites.push(format!("{}.{}", prefix, root));
+        }
     }
     sites
 }
@@ -114,26 +123,16 @@ pub fn predefined_lists() -> Vec<BlockList> {
         BlockList {
             id: "builtin-social".into(),
             name: "Social Media".into(),
-            sites: vec![
-                "instagram.com".into(),
-                "www.instagram.com".into(),
-                "facebook.com".into(),
-                "www.facebook.com".into(),
-                "m.facebook.com".into(),
-                "tiktok.com".into(),
-                "www.tiktok.com".into(),
-                "m.tiktok.com".into(),
-                "x.com".into(),
-                "www.x.com".into(),
-                "twitter.com".into(),
-                "www.twitter.com".into(),
-                "snapchat.com".into(),
-                "www.snapchat.com".into(),
-                "reddit.com".into(),
-                "www.reddit.com".into(),
-                "pinterest.com".into(),
-                "www.pinterest.com".into(),
-            ],
+            sites: expand_roots(&[
+                "instagram.com",
+                "facebook.com",
+                "tiktok.com",
+                "x.com",
+                "twitter.com",
+                "snapchat.com",
+                "reddit.com",
+                "pinterest.com",
+            ]),
             active: false,
             builtin: true,
         },

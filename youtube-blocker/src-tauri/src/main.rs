@@ -10,7 +10,7 @@ use auth::{hash_pin, verify_pin};
 use browsers::{are_policies_active, disable_browser_doh, enable_browser_doh, is_browser_policy_supported};
 use config::{config_path, load_config, save_config, AppConfig, BlockList};
 use firewall::{add_firewall_rules, are_rules_active, is_firewall_supported, remove_firewall_rules};
-use hosts::{block_sites, is_blocked, unblock_sites};
+use hosts::{block_sites, has_block_section, is_blocked, unblock_sites};
 use std::process::Command;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -136,8 +136,15 @@ fn clear_active_lists(cfg: &mut AppConfig) {
 
 // --- Normalizzazione dominio ---
 
-/// Normalizza l'input e restituisce root + varianti www/m.
-/// Es. "https://www.netflix.com/it" → ["netflix.com", "www.netflix.com", "m.netflix.com"]
+/// Prefissi sottodominio comuni (locale, mobile, www).
+const SUBDOMAIN_PREFIXES: &[&str] = &[
+    "www", "m",
+    "it", "en", "fr", "de", "es", "pt", "nl", "ru", "pl", "tr",
+    "ja", "ko", "zh", "ar", "hi", "th", "vi", "id",
+    "sv", "da", "no", "fi", "cs", "el", "ro", "hu", "bg", "uk", "hr",
+];
+
+/// Normalizza l'input e restituisce root + varianti (www, m, locale).
 fn expand_domain(input: &str) -> Vec<String> {
     let domain = input
         .trim()
@@ -147,19 +154,28 @@ fn expand_domain(input: &str) -> Vec<String> {
         .split('/')
         .next()
         .unwrap_or("")
-        .trim_start_matches("www.")
-        .trim_start_matches("m.")
         .to_string();
 
-    if domain.is_empty() || !domain.contains('.') {
+    // Rimuove qualsiasi prefisso noto per ottenere il root
+    let mut root = domain.as_str();
+    for prefix in SUBDOMAIN_PREFIXES {
+        if let Some(rest) = root.strip_prefix(prefix) {
+            if let Some(rest) = rest.strip_prefix('.') {
+                root = rest;
+                break;
+            }
+        }
+    }
+
+    if root.is_empty() || !root.contains('.') {
         return vec![];
     }
 
-    vec![
-        domain.clone(),
-        format!("www.{}", domain),
-        format!("m.{}", domain),
-    ]
+    let mut variants = vec![root.to_string()];
+    for prefix in SUBDOMAIN_PREFIXES {
+        variants.push(format!("{}.{}", prefix, root));
+    }
+    variants
 }
 
 // --- Comandi Tauri: stato ---
@@ -174,7 +190,11 @@ fn get_status(state: State<AppState>) -> Result<BlockStatus, String> {
         .filter(|l| l.active)
         .map(|l| l.name.clone())
         .collect();
-    let hosts_blocked = is_blocked(&sites).map_err(|e| e.to_string())?;
+    let hosts_blocked = if sites.is_empty() {
+        has_block_section().map_err(|e| e.to_string())?
+    } else {
+        is_blocked(&sites).map_err(|e| e.to_string())?
+    };
     let firewall_supported = is_firewall_supported();
     let browser_policy_supported = is_browser_policy_supported();
     let firewall_active = if cfg.block_doh && firewall_supported {

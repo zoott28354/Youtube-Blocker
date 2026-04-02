@@ -4,30 +4,52 @@ import { useI18n } from "../i18n";
 
 interface Props {
   lists: BlockList[];
+  blocked: boolean;
   onToggle: (id: string, active: boolean) => Promise<void>;
   onCreate: (name: string) => Promise<BlockList>;
   onUpdate: (id: string, name: string, sites: string[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
+// Prefissi sottodominio comuni (allineati con Rust)
+const SUBDOMAIN_PREFIXES = [
+  "www", "m",
+  "it", "en", "fr", "de", "es", "pt", "nl", "ru", "pl", "tr",
+  "ja", "ko", "zh", "ar", "hi", "th", "vi", "id",
+  "sv", "da", "no", "fi", "cs", "el", "ro", "hu", "bg", "uk", "hr",
+];
+
 // Replica la logica expand_domain di Rust
 function expandDomain(input: string): string[] {
-  const domain = input
+  let domain = input
     .trim()
     .toLowerCase()
     .replace(/^https?:\/\//, "")
-    .split("/")[0]
-    .replace(/^www\./, "")
-    .replace(/^m\./, "");
+    .split("/")[0];
+  // Rimuove qualsiasi prefisso noto per ottenere il root
+  for (const prefix of SUBDOMAIN_PREFIXES) {
+    if (domain.startsWith(prefix + ".")) {
+      domain = domain.slice(prefix.length + 1);
+      break;
+    }
+  }
   if (!domain || !domain.includes(".")) return [];
-  return [domain, `www.${domain}`, `m.${domain}`];
+  return [domain, ...SUBDOMAIN_PREFIXES.map((p) => `${p}.${domain}`)];
+}
+
+// Estrae il root domain rimuovendo qualsiasi prefisso noto
+function stripPrefix(site: string): string {
+  for (const prefix of SUBDOMAIN_PREFIXES) {
+    if (site.startsWith(prefix + ".")) return site.slice(prefix.length + 1);
+  }
+  return site;
 }
 
 // Raggruppa i siti per root domain per mostrarli in modo compatto
 function groupByRoot(sites: string[]): Record<string, string[]> {
   const groups: Record<string, string[]> = {};
   for (const site of sites) {
-    const root = site.replace(/^www\./, "").replace(/^m\./, "");
+    const root = stripPrefix(site);
     if (!groups[root]) groups[root] = [];
     if (!groups[root].includes(site)) groups[root].push(site);
   }
@@ -47,6 +69,7 @@ interface EditState {
 
 export default function BlockLists({
   lists,
+  blocked,
   onToggle,
   onCreate,
   onUpdate,
@@ -122,7 +145,7 @@ export default function BlockLists({
   }
 
   async function handleDuplicate(list: BlockList) {
-    const newList = await onCreate(displayName(list) + " (copia)");
+    const newList = await onCreate(displayName(list) + " " + t.duplicateSuffix);
     await onUpdate(newList.id, newList.name, [...list.sites]);
     // Entra in edit mode sulla nuova lista
     setEditing({ id: newList.id, name: newList.name, sites: [...list.sites] });
@@ -164,15 +187,45 @@ export default function BlockLists({
     return `${n} ${n === 1 ? t.siteSingular : t.sitePlural}`;
   }
 
+  // Ordina: custom/duplicate in alto, builtin in basso
+  const sortedLists = [...lists].sort((a, b) => {
+    if (a.builtin === b.builtin) return 0;
+    return a.builtin ? 1 : -1;
+  });
+
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-500">{t.listsHint}</p>
+
+      {blocked && (
+        <p className="text-xs text-amber-400">{t.listsLockedHint}</p>
+      )}
+
+      {/* Crea nuova lista */}
+      <div className="border-b border-gray-800 pb-3">
+        <div className="flex gap-2">
+          <input
+            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            value={newListName}
+            onChange={(e) => setNewListName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            placeholder={t.newListNamePlaceholder}
+          />
+          <button
+            onClick={handleCreate}
+            disabled={creating || !newListName.trim()}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-colors"
+          >
+            {t.createBtn}
+          </button>
+        </div>
+      </div>
 
       {lists.length === 0 && (
         <p className="text-sm text-gray-500 py-4 text-center">{t.noLists}</p>
       )}
 
-      {lists.map((list) => (
+      {sortedLists.map((list) => (
         <div key={list.id} className="bg-gray-900 rounded-xl overflow-hidden">
           {editing?.id === list.id ? (
             /* ── Modalità modifica ── */
@@ -279,10 +332,10 @@ export default function BlockLists({
                 {/* Toggle */}
                 <button
                   onClick={() => handleToggle(list.id, !list.active)}
-                  disabled={toggling === list.id}
+                  disabled={blocked || toggling === list.id}
                   className={`relative mt-0.5 h-6 w-10 rounded-full transition-colors flex-shrink-0 ${
                     list.active ? "bg-blue-600" : "bg-gray-700"
-                  } ${toggling === list.id ? "opacity-50" : ""}`}
+                  } ${blocked || toggling === list.id ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <span
                     className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform ${
@@ -347,25 +400,6 @@ export default function BlockLists({
         </div>
       ))}
 
-      {/* Crea nuova lista */}
-      <div className="border-t border-gray-800 pt-3">
-        <div className="flex gap-2">
-          <input
-            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-            value={newListName}
-            onChange={(e) => setNewListName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-            placeholder={t.newListNamePlaceholder}
-          />
-          <button
-            onClick={handleCreate}
-            disabled={creating || !newListName.trim()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-colors"
-          >
-            {t.createBtn}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
