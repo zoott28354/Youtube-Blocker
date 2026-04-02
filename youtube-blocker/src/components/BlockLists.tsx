@@ -10,24 +10,45 @@ interface Props {
   onDelete: (id: string) => Promise<void>;
 }
 
+// Prefissi sottodominio comuni (allineati con Rust)
+const SUBDOMAIN_PREFIXES = [
+  "www", "m",
+  "it", "en", "fr", "de", "es", "pt", "nl", "ru", "pl", "tr",
+  "ja", "ko", "zh", "ar", "hi", "th", "vi", "id",
+  "sv", "da", "no", "fi", "cs", "el", "ro", "hu", "bg", "uk", "hr",
+];
+
 // Replica la logica expand_domain di Rust
 function expandDomain(input: string): string[] {
-  const domain = input
+  let domain = input
     .trim()
     .toLowerCase()
     .replace(/^https?:\/\//, "")
-    .split("/")[0]
-    .replace(/^www\./, "")
-    .replace(/^m\./, "");
+    .split("/")[0];
+  // Rimuove qualsiasi prefisso noto per ottenere il root
+  for (const prefix of SUBDOMAIN_PREFIXES) {
+    if (domain.startsWith(prefix + ".")) {
+      domain = domain.slice(prefix.length + 1);
+      break;
+    }
+  }
   if (!domain || !domain.includes(".")) return [];
-  return [domain, `www.${domain}`, `m.${domain}`];
+  return [domain, ...SUBDOMAIN_PREFIXES.map((p) => `${p}.${domain}`)];
+}
+
+// Estrae il root domain rimuovendo qualsiasi prefisso noto
+function stripPrefix(site: string): string {
+  for (const prefix of SUBDOMAIN_PREFIXES) {
+    if (site.startsWith(prefix + ".")) return site.slice(prefix.length + 1);
+  }
+  return site;
 }
 
 // Raggruppa i siti per root domain per mostrarli in modo compatto
 function groupByRoot(sites: string[]): Record<string, string[]> {
   const groups: Record<string, string[]> = {};
   for (const site of sites) {
-    const root = site.replace(/^www\./, "").replace(/^m\./, "");
+    const root = stripPrefix(site);
     if (!groups[root]) groups[root] = [];
     if (!groups[root].includes(site)) groups[root].push(site);
   }

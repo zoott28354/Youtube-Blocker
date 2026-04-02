@@ -36,12 +36,21 @@ fn default_true() -> bool {
     true
 }
 
+/// Prefissi sottodominio comuni (locale, mobile, www).
+const SUBDOMAIN_PREFIXES: &[&str] = &[
+    "www", "m",
+    "it", "en", "fr", "de", "es", "pt", "nl", "ru", "pl", "tr",
+    "ja", "ko", "zh", "ar", "hi", "th", "vi", "id",
+    "sv", "da", "no", "fi", "cs", "el", "ro", "hu", "bg", "uk", "hr",
+];
+
 fn expand_roots(roots: &[&str]) -> Vec<String> {
     let mut sites = Vec::new();
     for root in roots {
         sites.push((*root).to_string());
-        sites.push(format!("www.{}", root));
-        sites.push(format!("m.{}", root));
+        for prefix in SUBDOMAIN_PREFIXES {
+            sites.push(format!("{}.{}", prefix, root));
+        }
     }
     sites
 }

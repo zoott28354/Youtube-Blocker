@@ -102,8 +102,15 @@ fn clear_active_lists(cfg: &mut AppConfig) {
 
 // --- Normalizzazione dominio ---
 
-/// Normalizza l'input e restituisce root + varianti www/m.
-/// Es. "https://www.netflix.com/it" → ["netflix.com", "www.netflix.com", "m.netflix.com"]
+/// Prefissi sottodominio comuni (locale, mobile, www).
+const SUBDOMAIN_PREFIXES: &[&str] = &[
+    "www", "m",
+    "it", "en", "fr", "de", "es", "pt", "nl", "ru", "pl", "tr",
+    "ja", "ko", "zh", "ar", "hi", "th", "vi", "id",
+    "sv", "da", "no", "fi", "cs", "el", "ro", "hu", "bg", "uk", "hr",
+];
+
+/// Normalizza l'input e restituisce root + varianti (www, m, locale).
 fn expand_domain(input: &str) -> Vec<String> {
     let domain = input
         .trim()
@@ -113,19 +120,28 @@ fn expand_domain(input: &str) -> Vec<String> {
         .split('/')
         .next()
         .unwrap_or("")
-        .trim_start_matches("www.")
-        .trim_start_matches("m.")
         .to_string();
 
-    if domain.is_empty() || !domain.contains('.') {
+    // Rimuove qualsiasi prefisso noto per ottenere il root
+    let mut root = domain.as_str();
+    for prefix in SUBDOMAIN_PREFIXES {
+        if let Some(rest) = root.strip_prefix(prefix) {
+            if let Some(rest) = rest.strip_prefix('.') {
+                root = rest;
+                break;
+            }
+        }
+    }
+
+    if root.is_empty() || !root.contains('.') {
         return vec![];
     }
 
-    vec![
-        domain.clone(),
-        format!("www.{}", domain),
-        format!("m.{}", domain),
-    ]
+    let mut variants = vec![root.to_string()];
+    for prefix in SUBDOMAIN_PREFIXES {
+        variants.push(format!("{}.{}", prefix, root));
+    }
+    variants
 }
 
 // --- Comandi Tauri: stato ---
