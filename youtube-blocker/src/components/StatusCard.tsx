@@ -46,7 +46,7 @@ export default function StatusCard({ status, loading, onBlock, onUnblock }: Prop
             <div className="flex justify-center gap-4 text-xs text-gray-400">
               {(
                 [
-                  [t.hosts, status.hosts_blocked],
+                  [t.hosts, status.hosts_blocked, true],
                   [
                     t.firewallDoh,
                     status.firewall_active,
