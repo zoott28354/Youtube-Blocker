@@ -32,7 +32,7 @@ Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 | Operazione | Cosa succede |
 |---|---|
 | **Apertura app** | Richiede PIN — il figlio non può accedere senza |
-| **Blocca** | Applica le liste attive: voci `127.0.0.1` nel file hosts + regole firewall outbound verso DoH + Group Policy DoH nei browser |
+| **Blocca** | Applica le liste attive: voci `127.0.0.1` e `::1` nel file hosts + regole firewall outbound verso DoH + Group Policy DoH nei browser |
 | **Sblocca** | Richiede PIN → rimuove voci hosts + regole firewall + ripristina policy browser → flush DNS e spegne tutte le liste attive |
 
 Il blocco **persiste dopo la chiusura dell'app** e dopo il riavvio del PC.
@@ -48,7 +48,7 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 
 | Livello | Cosa blocca |
 |---|---|
-| **🗂️ Hosts** | Reindirizza la risoluzione DNS a `127.0.0.1` per tutti i browser |
+| **🗂️ Hosts** | Reindirizza la risoluzione DNS a `127.0.0.1` e `::1` (IPv6) per tutti i browser |
 | **🔥 Firewall DoH** | Blocca il traffico TCP outbound verso IP DoH noti (Cloudflare, Google, Quad9) su porte 443 e 853 |
 | **🌐 Policy browser** | Disabilita il DoH interno dei principali browser via Group Policy |
 
@@ -78,8 +78,10 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 
 | File | Descrizione |
 |---|---|
-| `YouTubeBlocker_vX.X.X-setup.exe` | Installer NSIS (raccomandato) — installa per tutti gli utenti |
-| `YouTubeBlocker_vX.X.X.exe` | Portable — nessun installer, esegui e basta |
+| `YouTubeBlocker_X.X.X_x64-setup.exe` | Installer NSIS — installa per tutti gli utenti |
+
+> Al doppio click sul setup, Windows potrebbe mostrare un avviso SmartScreen ("App non riconosciuta").
+> Clicca **Ulteriori informazioni → Esegui comunque**. L'avviso compare perché l'exe non ha una firma digitale, non perché sia pericoloso.
 
 ---
 
@@ -114,7 +116,6 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 |---|---|
 | `setup.bat` | Controlla prerequisiti (Node.js, Rust), installa npm, genera `lancia.bat` nella root |
 | `build.bat` | Produce l'installer NSIS in `youtube-blocker/target/release/bundle/nsis/` |
-| `build_portable.bat` | Produce `YouTubeBlocker_vX.X.X.exe` nella root del repo |
 | `bump_version.bat` | Aggiorna versione in `tauri.conf.json`, `Cargo.toml` e `package.json` |
 
 > `lancia.bat` è generato da `setup.bat` nella root del repo — non è in git (`.gitignore`).
@@ -125,7 +126,6 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 1. Clona il repo
 2. Esegui setup\setup.bat        → installa npm packages
 3. Esegui setup\build.bat        → compila tutto (prima volta: 15–30 min)
-   oppure setup\build_portable.bat
 ```
 
 ### Cartelle generate (non nel git)
@@ -149,7 +149,6 @@ YouTube-Blocker/
 ├── setup/
 │   ├── setup.bat
 │   ├── build.bat
-│   ├── build_portable.bat
 │   └── bump_version.bat
 └── youtube-blocker/
     ├── src-tauri/src/
