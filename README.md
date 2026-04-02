@@ -5,11 +5,13 @@
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2011-0078D4?logo=windows&logoColor=white)](https://github.com/zoott28354/YouTube-Blocker/releases)
 [![Release](https://img.shields.io/github/v/release/zoott28354/YouTube-Blocker)](https://github.com/zoott28354/YouTube-Blocker/releases/latest)
 
-App desktop per bloccare siti a livello di sistema su Windows.
-Ideale per genitori che vogliono limitare l'accesso a YouTube e altri siti sui PC dei figli.
+App desktop per bloccare siti a livello di sistema su Windows. Ideale per genitori che vogliono limitare l'accesso a YouTube e altri siti sui PC dei figli.
 
-Agisce su tre livelli: **file hosts** + **regole firewall anti-DoH** + **Group Policy browser** —
-nessun bypass possibile tramite DNS-over-HTTPS.
+Lo lanci, inserisci il PIN e selezioni la lista preimpostata da bloccare (video, games, ecc.) poi **BLOCCA**!
+Resterà bloccato fino a quando non riaprirai l'app e premi **SBLOCCA**.
+Puoi anche duplicare una lista e modificarla oppure crearne una nuova (per i siti per adulti per esempio).
+
+Agisce su tre livelli: **file hosts** + **regole firewall anti-DoH** + **Group Policy browser** — nessun bypass possibile tramite DNS-over-HTTPS.
 
 Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 
