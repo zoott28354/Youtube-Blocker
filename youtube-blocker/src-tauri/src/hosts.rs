@@ -84,15 +84,18 @@ fn blocked_domains_from_content(content: &str) -> std::collections::HashSet<Stri
         if in_section {
             let mut parts = trimmed.split_whitespace();
             if let (Some(ip), Some(domain), None) = (parts.next(), parts.next(), parts.next()) {
-                if ip == "127.0.0.1" {
+                if ip == "127.0.0.1" || ip == "::1" {
                     blocked.insert(domain.to_string());
                 }
             }
             continue;
         }
 
-        if let Some(domain) = trimmed.strip_prefix("127.0.0.1 ") {
-            // Retrocompatibilita' con il vecchio formato senza sezione dedicata.
+        // Retrocompatibilita' con il vecchio formato senza sezione dedicata.
+        let legacy_domain = trimmed
+            .strip_prefix("127.0.0.1 ")
+            .or_else(|| trimmed.strip_prefix("::1 "));
+        if let Some(domain) = legacy_domain {
             if !domain.contains(char::is_whitespace) && !domain.starts_with('#') {
                 blocked.insert(domain.to_string());
             }
@@ -125,7 +128,11 @@ pub fn block_sites(sites: &[String]) -> Result<(), HostsError> {
     // Fallback retrocompatibilità: rimuove righe vecchio formato senza sezione
     let legacy: std::collections::HashSet<String> = sites
         .iter()
-        .flat_map(|d| [format!("{} {}", BLOCK_MARKER, d), format!("127.0.0.1 {}", d)])
+        .flat_map(|d| [
+            format!("{} {}", BLOCK_MARKER, d),
+            format!("127.0.0.1 {}", d),
+            format!("::1 {}", d),
+        ])
         .collect();
     base.retain(|l| !legacy.contains(l.trim()));
 
@@ -135,6 +142,7 @@ pub fn block_sites(sites: &[String]) -> Result<(), HostsError> {
     base.push(SECTION_START.to_string());
     for domain in sites {
         base.push(format!("127.0.0.1 {}", domain));
+        base.push(format!("::1 {}", domain));
     }
     base.push(SECTION_END.to_string());
 
@@ -156,7 +164,11 @@ pub fn unblock_sites(sites: &[String]) -> Result<(), HostsError> {
     // Fallback retrocompatibilità: rimuove righe vecchio formato
     let legacy: std::collections::HashSet<String> = sites
         .iter()
-        .flat_map(|d| [format!("{} {}", BLOCK_MARKER, d), format!("127.0.0.1 {}", d)])
+        .flat_map(|d| [
+            format!("{} {}", BLOCK_MARKER, d),
+            format!("127.0.0.1 {}", d),
+            format!("::1 {}", d),
+        ])
         .collect();
     filtered.retain(|l| !legacy.contains(l.trim()));
 
