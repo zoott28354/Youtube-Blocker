@@ -2,18 +2,17 @@
 ### *...e altri siti che vuoi bloccare*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2011-0078D4?logo=windows&logoColor=white)](https://github.com/zoott28354/YouTube-Blocker/releases)
+[![Platform: Windows + macOS](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-0078D4?logo=windows&logoColor=white)](https://github.com/zoott28354/YouTube-Blocker/releases)
 [![Release](https://img.shields.io/github/v/release/zoott28354/YouTube-Blocker)](https://github.com/zoott28354/YouTube-Blocker/releases/latest)
 
-App desktop per bloccare siti a livello di sistema, oggi focalizzata su Windows.
+App desktop per bloccare siti a livello di sistema su **Windows** e **macOS**.
 Ideale per genitori che vogliono limitare l'accesso a YouTube e altri siti sui PC dei figli.
 
 Lo lanci, inserisci il PIN e selezioni la lista preimpostata da bloccare (video, games, ecc.) poi **BLOCCA**!
 Resterà bloccato fino a quando non riaprirai l'app e premi **SBLOCCA**.
 Puoi anche duplicare una lista e modificarla oppure crearne una nuova (per i siti per adulti per esempio).
 
-Su Windows agisce su tre livelli: **file hosts** + **regole firewall anti-DoH** + **Group Policy browser** — nessun bypass possibile tramite DNS-over-HTTPS.
-Sul branch `multios` e' in preparazione anche una **v1 macOS utile** basata sul file hosts, con PIN e liste, ma senza ancora parita' completa su firewall/policy browser.
+Agisce su tre livelli: **file hosts** + **regole firewall anti-DoH** + **policy browser** — nessun bypass possibile tramite DNS-over-HTTPS.
 
 Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 
@@ -21,23 +20,13 @@ Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 
 ## ✨ Caratteristiche
 
-- 🔒 **Blocco a tre livelli** — hosts, firewall, policy browser
+- 🔒 **Blocco a tre livelli** — hosts, firewall DoH, policy browser
 - 🔑 **PIN genitore** — hash argon2id, minimo 4 caratteri
 - 📚 **Liste di blocco** — preset per video, browser games, gaming platforms, chat, social e streaming + liste personalizzate
-- 💾 **Blocco persistente** — resta attivo dopo chiusura app e riavvio PC
-- 🧹 **Ripristino al disinstall** — il wizard chiede se ripristinare tutto prima di rimuovere l'app
+- 🌐 **31 varianti per dominio** — blocca automaticamente www, m e 29 sottodomini locale (it, en, fr, de, ecc.)
+- 💾 **Blocco persistente** — resta attivo dopo chiusura app e riavvio PC/Mac
 - 🌍 **Italiano / Inglese** — toggle in header
-- 📦 **Installer perMachine** — installa per tutti gli utenti Windows
-
-## 🍎 Stato macOS
-
-Il progetto sta iniziando una portabilita' pragmatica verso macOS.
-
-- **Windows** resta il target principale con blocco a tre livelli.
-- **macOS v1 utile**: obiettivo `hosts-only`, con PIN, liste, stato coerente e UX chiara.
-- **macOS v1** non promette ancora il blocco anti-DoH equivalente a Windows.
-
-Per l'uso familiare normale questa versione avrebbe comunque valore: blocca i siti piu' comuni in modo semplice e protetto da PIN, senza vendere una falsa protezione "enterprise".
+- 🖥️ **Windows + macOS** — blocco completo a tre livelli su entrambi
 
 ---
 
@@ -45,41 +34,37 @@ Per l'uso familiare normale questa versione avrebbe comunque valore: blocca i si
 
 | Operazione | Cosa succede |
 |---|---|
-| **Apertura app** | Richiede PIN — il figlio non può accedere senza |
-| **Blocca** | Applica le liste attive: voci `127.0.0.1` e `::1` nel file hosts + regole firewall outbound verso DoH + Group Policy DoH nei browser |
-| **Sblocca** | Richiede PIN → rimuove voci hosts + regole firewall + ripristina policy browser → flush DNS e spegne tutte le liste attive |
+| **Apertura app** | Richiede password admin (macOS) o privilegi admin (Windows), poi PIN |
+| **Blocca** | Applica le liste attive: voci `127.0.0.1` e `::1` nel file hosts + regole firewall DoH + policy browser |
+| **Sblocca** | Richiede PIN → rimuove voci hosts + regole firewall + ripristina policy browser → flush DNS |
 
-Il blocco **persiste dopo la chiusura dell'app** e dopo il riavvio del PC.
+Il blocco **persiste dopo la chiusura dell'app** e dopo il riavvio del PC/Mac.
 L'app non deve restare in esecuzione.
-
-Lo sblocco è **anch'esso permanente**: una volta inserito il PIN e confermato, i siti tornano
-accessibili anche dopo la chiusura dell'app e il riavvio del PC.
-Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 
 ---
 
 ## 🛡️ Livelli di blocco
 
-| Livello | Cosa blocca |
-|---|---|
-| **🗂️ Hosts** | Reindirizza la risoluzione DNS a `127.0.0.1` e `::1` (IPv6) per tutti i browser |
-| **🔥 Firewall DoH** | Blocca il traffico TCP outbound verso IP DoH noti (Cloudflare, Google, Quad9) su porte 443 e 853 |
-| **🌐 Policy browser** | Disabilita il DoH interno dei principali browser via Group Policy |
+| Livello | Windows | macOS |
+|---|---|---|
+| **🗂️ Hosts** | `127.0.0.1` + `::1` in `C:\Windows\System32\drivers\etc\hosts` | `127.0.0.1` + `::1` in `/etc/hosts` |
+| **🔥 Firewall DoH** | Regole `netsh` outbound TCP verso DoH noti (porta 443/853) | Regole `pfctl` (packet filter) verso DoH noti (porta 443/853) |
+| **🌐 Policy browser** | Registry `HKLM\SOFTWARE\Policies\...` per Chromium + `policies.json` per Firefox | Plist in `/Library/Managed Preferences/` per Chromium + `policies.json` per Firefox |
 
 > I tre livelli insieme impediscono l'aggiramento tramite DNS-over-HTTPS,
 > sia a livello di sistema operativo che di singolo browser.
 
 ### Browser con policy DoH gestita
 
-| Browser | Metodo |
-|---|---|
-| Google Chrome | Registry `HKLM\SOFTWARE\Policies\Google\Chrome` |
-| Microsoft Edge | Registry `HKLM\SOFTWARE\Policies\Microsoft\Edge` |
-| Brave | Registry `HKLM\SOFTWARE\Policies\BraveSoftware\Brave` |
-| Vivaldi | Registry `HKLM\SOFTWARE\Policies\Vivaldi` |
-| Opera / Opera GX | Registry `HKLM\SOFTWARE\Policies\Opera Software\Opera` |
-| Chromium | Registry `HKLM\SOFTWARE\Policies\Chromium` |
-| Firefox | `distribution/policies.json` nella cartella di installazione |
+| Browser | Windows | macOS |
+|---|---|---|
+| Google Chrome | Registry | Managed Preferences plist |
+| Microsoft Edge | Registry | Managed Preferences plist |
+| Brave | Registry | Managed Preferences plist |
+| Vivaldi | Registry | Managed Preferences plist |
+| Opera / Opera GX | Registry | Managed Preferences plist |
+| Chromium | Registry | Managed Preferences plist |
+| Firefox | `policies.json` | `policies.json` |
 
 > Se il browser non è installato, l'operazione viene ignorata senza errori.
 > Hosts e firewall bloccano comunque il DNS per **qualsiasi** browser.
@@ -90,12 +75,25 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 
 **[→ Scarica l'ultima versione](https://github.com/zoott28354/YouTube-Blocker/releases/latest)**
 
+### Windows
+
 | File | Descrizione |
 |---|---|
 | `YouTubeBlocker_X.X.X_x64-setup.exe` | Installer NSIS — installa per tutti gli utenti |
 
 > Al doppio click sul setup, Windows potrebbe mostrare un avviso SmartScreen ("App non riconosciuta").
-> Clicca **Ulteriori informazioni → Esegui comunque**. L'avviso compare perché l'exe non ha una firma digitale, non perché sia pericoloso.
+> Clicca **Ulteriori informazioni → Esegui comunque**.
+
+### macOS
+
+Installa tramite [Homebrew](https://brew.sh/):
+
+```
+brew tap zoott28354/youtube-blocker
+brew install --cask youtube-blocker
+```
+
+Al primo avvio l'app chiederà la password di amministratore.
 
 ---
 
@@ -105,6 +103,7 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 - **Rust** — backend (hosts, firewall, browser policy, auth, config)
 - **React + TypeScript + Tailwind CSS** — frontend
 - **i18n** — interfaccia Italiano / Inglese (toggle in header)
+- **GitHub Actions** — build automatico Windows + macOS
 
 ---
 
@@ -112,47 +111,34 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 
 ### Prerequisiti
 
-- Windows 11 (x64)
+- Windows 11 (x64) o macOS 10.15+ (Apple Silicon / Intel)
 - [Rust](https://rustup.rs/) (`rustup` + `cargo`)
 - [Node.js](https://nodejs.org/) 20+
-- Microsoft C++ Build Tools (installabili da Visual Studio Installer)
+- Windows: Microsoft C++ Build Tools (Visual Studio Installer)
+- macOS: Xcode Command Line Tools (`xcode-select --install`)
 
-### Avvio rapido
+### Avvio rapido (Windows)
 
 ```
 1. Esegui setup\setup.bat     → installa dipendenze npm e genera lancia.bat nella root
 2. Doppio click su lancia.bat → eleva admin + avvia Tauri dev server
 ```
 
-### Scripts (cartella `setup/`)
-
-| Script | Cosa fa |
-|---|---|
-| `setup.bat` | Controlla prerequisiti (Node.js, Rust), installa npm, genera `lancia.bat` nella root |
-| `build.bat` | Produce l'installer NSIS in `youtube-blocker/target/release/bundle/nsis/` |
-| `bump_version.bat` | Aggiorna versione in `tauri.conf.json`, `Cargo.toml` e `package.json` |
-
-> `lancia.bat` è generato da `setup.bat` nella root del repo — non è in git (`.gitignore`).
-
-### Prima build (da zero)
+### Avvio rapido (macOS)
 
 ```
-1. Clona il repo
-2. Esegui setup\setup.bat        → installa npm packages
-3. Esegui setup\build.bat        → compila tutto (prima volta: 15–30 min)
+1. cd youtube-blocker && npm install
+2. sudo npm run tauri dev
 ```
 
-### Cartelle generate (non nel git)
+### Build
 
-| Cartella | Dim. | Come si rigenera |
+| Piattaforma | Comando | Output |
 |---|---|---|
-| `youtube-blocker/node_modules/` | ~400 MB | `setup.bat` / `npm install` |
-| `youtube-blocker/dist/` | piccola | automatica |
-| `youtube-blocker/.vite/` | piccola | automatica |
-| `youtube-blocker/target/` | **2–5 GB** | automatica (~20 min) |
+| Windows | `setup\build.bat` | `youtube-blocker/target/release/bundle/nsis/*.exe` |
+| macOS | `cd youtube-blocker && npm run tauri build` | `src-tauri/target/release/bundle/dmg/*.dmg` |
 
-> Eliminare `target/` è sicuro ma richiede ricompilazione completa.
-> Eliminare solo `target/debug/` libera spazio senza toccare la build di release.
+> La CI su GitHub Actions builda automaticamente entrambe le piattaforme ad ogni tag `v*`.
 
 ---
 
@@ -160,24 +146,28 @@ Per bloccare nuovamente è sufficiente riaprire l'app e premere **Blocca**.
 
 ```
 YouTube-Blocker/
+├── .github/workflows/
+│   └── build.yml         — CI: build Windows + macOS, crea release
+├── homebrew/
+│   └── youtube-blocker.rb — formula Homebrew Cask per macOS
 ├── setup/
 │   ├── setup.bat
 │   ├── build.bat
 │   └── bump_version.bat
 └── youtube-blocker/
     ├── src-tauri/src/
-    │   ├── main.rs       — comandi Tauri, admin check, AppState
-    │   ├── config.rs     — AppConfig, load/save JSON in %PROGRAMDATA%\YouTubeBlocker\
+    │   ├── main.rs       — comandi Tauri, admin check (Windows + macOS), AppState
+    │   ├── config.rs     — AppConfig, liste predefinite, sync, migration
     │   ├── auth.rs       — PIN con argon2id
-    │   ├── hosts.rs      — blocco/sblocco file hosts + flush DNS
-    │   ├── firewall.rs   — regole netsh per DNS-over-HTTPS
-    │   └── browsers.rs   — Group Policy DoH per Chrome/Edge/Brave/Vivaldi/Opera/Firefox
+    │   ├── hosts.rs      — blocco/sblocco file hosts + flush DNS (cross-platform)
+    │   ├── firewall.rs   — Windows: netsh | macOS: pfctl
+    │   └── browsers.rs   — Windows: registry | macOS: managed preferences plist
     └── src/
-        ├── i18n.tsx              — traduzioni IT/EN, LangProvider, useI18n
+        ├── i18n.tsx              — traduzioni IT/EN
         ├── App.tsx               — routing tab, session lock, setup PIN
         ├── hooks/useBlocker.ts   — stato centralizzato, invoke Tauri
         └── components/
-            ├── StatusCard.tsx    — badge stato, 3 indicatori, liste attive, icona
+            ├── StatusCard.tsx    — badge stato, indicatori per livello
             ├── BlockLists.tsx    — preset e liste personalizzate, toggle, edit, duplica
             ├── PinModal.tsx      — modal setup e verifica PIN
             ├── Settings.tsx      — cambio PIN, reset PIN
@@ -188,7 +178,8 @@ YouTube-Blocker/
 
 ## 💾 Configurazione persistita
 
-`%PROGRAMDATA%\YouTubeBlocker\config.json`
+- **Windows**: `%PROGRAMDATA%\YouTubeBlocker\config.json`
+- **macOS**: `~/Library/Application Support/YouTubeBlocker/config.json`
 
 ```json
 {
@@ -196,7 +187,7 @@ YouTube-Blocker/
     {
       "id": "builtin-youtube",
       "name": "YouTube & Video",
-      "sites": ["youtube.com", "www.youtube.com", "m.youtube.com"],
+      "sites": ["youtube.com", "www.youtube.com", "m.youtube.com", "..."],
       "active": false,
       "builtin": true
     }
@@ -208,10 +199,8 @@ YouTube-Blocker/
 
 - Le liste si gestiscono dalla tab **Liste**.
 - Le preset incluse coprono video, browser games, gaming platforms, chat/messaging, social e streaming.
-- Puoi anche duplicare una lista predefinita per trasformarla in una lista personalizzata.
-- In modifica, le varianti `www.` e `m.` restano visibili e modificabili come voci separate.
-- Se l'app apre in stato **Sbloccato**, le liste attive residue vengono riallineate e spente automaticamente.
-- Il PIN si gestisce dalla tab **Impostazioni**.
+- Puoi duplicare una lista predefinita per farne una personalizzata.
+- Se l'app apre in stato **Sbloccato**, le liste attive residue vengono spente automaticamente.
 - PIN dimenticato? → **Impostazioni → Reset PIN** → al prossimo avvio si reimposta.
 
 ---
