@@ -460,25 +460,9 @@ fn main() {
     }
 
     let mut config = load_config().unwrap_or_default();
-    let had_active_lists = config.lists.iter().any(|list| list.active);
-    if had_active_lists {
-        let sites = active_sites(&config);
-        let hosts_ok = !sites.is_empty()
-            && is_blocked(&sites).unwrap_or(false);
-
-        if hosts_ok {
-            // Hosts ancora bloccati (es. dopo riavvio): riapplica firewall/policy
-            // se mancanti (pfctl si perde al reboot su macOS).
-            if config.block_doh {
-                if is_firewall_supported() && !are_rules_active() {
-                    let _ = add_firewall_rules();
-                }
-                if is_browser_policy_supported() && !are_policies_active() {
-                    disable_browser_doh();
-                }
-            }
-        } else {
-            // Hosts non bloccati ma liste attive: stato incoerente → pulisci
+    if !is_protection_active_for_config(&config).unwrap_or(false) {
+        let had_active_lists = config.lists.iter().any(|list| list.active);
+        if had_active_lists {
             clear_active_lists(&mut config);
             let _ = save_config(&config);
         }
