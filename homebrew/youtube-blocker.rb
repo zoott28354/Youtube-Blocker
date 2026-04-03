@@ -1,6 +1,6 @@
 cask "youtube-blocker" do
-  version "1.1.4"
-  sha256 :no_check # Aggiornare con sha256 reale dopo il primo build macOS
+  version "1.2.0"
+  sha256 "aa9aea38297837ba81dd961d6e77c9c9cb3989d9d47e305b0327606d84d95701"
 
   url "https://github.com/zoott28354/Youtube-Blocker/releases/download/v#{version}/YouTubeBlocker_#{version}_aarch64.dmg"
   name "YouTube Blocker"
@@ -10,6 +10,12 @@ cask "youtube-blocker" do
   depends_on macos: ">= :catalina"
 
   app "YouTubeBlocker.app"
+
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-cr", "#{appdir}/YouTubeBlocker.app"],
+                   sudo: false
+  end
 
   zap trash: [
     "/Library/Managed Preferences/com.google.Chrome.plist",
