@@ -7,10 +7,9 @@ Su Windows il blocco usa tre livelli: file `hosts` + regole Windows Firewall ant
 PIN argon2id richiesto per aprire l'app e per sbloccare. Interfaccia bilingue IT/EN.
 
 ### Stato branch `multios`
-- Windows resta il target principale e completo: `hosts` + firewall anti-DoH + browser policy
-- macOS v1 utile e pragmatica: `hosts` + PIN + liste + stato coerente, senza fingere parita' con Windows
+- Windows: blocco completo a tre livelli (`hosts` + firewall anti-DoH + browser policy)
+- macOS: blocco tramite `hosts` + browser policy silenziosa (disabilita DoH nei browser per evitare ritardi da DNS cache). La UI mostra solo BLOCCATO/SBLOCCATO senza dettagli sui layer.
 - Linux e' secondario: stessa idea di macOS, ma non e' il focus immediato
-- Se lavori dal branch `multios`, considera macOS come modalita' `hosts-only` esplicita in UI
 
 ## Stack
 - Tauri 2.x + React + TypeScript + Tailwind CSS
@@ -45,8 +44,8 @@ YouTube-Blocker/
 | `src-tauri/src/config.rs` | AppConfig, load/save `%PROGRAMDATA%\YouTubeBlocker\config.json` (condiviso tra utenti) |
 | `src-tauri/src/auth.rs` | hash_pin / verify_pin con argon2id |
 | `src-tauri/src/hosts.rs` | Lettura/scrittura file hosts + flush DNS multipiattaforma |
-| `src-tauri/src/firewall.rs` | Regole netsh outbound TCP verso DoH su porte 443 e 853 |
-| `src-tauri/src/browsers.rs` | Group Policy DoH per Chrome/Edge/Brave (registry) e Firefox (policies.json) |
+| `src-tauri/src/firewall.rs` | Windows: regole netsh outbound TCP verso DoH su porte 443 e 853 (non usato su macOS) |
+| `src-tauri/src/browsers.rs` | Disabilita DoH nei browser. Windows: registry + policies.json. macOS: managed prefs plist + policies.json (silente, non mostrato in UI) |
 | `src/i18n.tsx` | Traduzioni IT/EN, LangProvider context, useI18n hook |
 | `src/hooks/useBlocker.ts` | Stato React centralizzato, tutti gli invoke Tauri |
 | `src/App.tsx` | Routing tab, session lock, setup PIN, toggle lingua |
@@ -73,18 +72,18 @@ Nel branch `multios` c'e' anche un primo flusso macOS con `osascript` per rilanc
 - Line endings: `\r\n` su Windows, `\n` su Mac/Linux (cfg! compile-time)
 - flush_dns() chiamato dopo ogni write
 
-### Firewall
+### Firewall (solo Windows)
 - Nome regole: `YouTubeBlocker_DoH_<ip>_p<porta>` (deterministico)
 - Remove-before-add: idempotente, sicuro chiamare più volte
 - Solo TCP (DoH su QUIC/UDP porta 443 non bloccato — possibile v2)
-- Oggi e' Windows-only: nel branch `multios` il backend espone anche `is_firewall_supported()`
+- `is_firewall_supported()` ritorna true solo su Windows
+- Su macOS il firewall pfctl e' stato rimosso: le regole non persistevano al reboot (pf disabilitato di default)
 
 ### Browser DoH (browsers.rs)
-- Chrome/Edge/Brave/Vivaldi/Opera/Chromium: chiave registry `HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"`
-- Firefox: crea `distribution/policies.json` nella cartella di installazione con backup/restore
-- Marker `"_youtubeblocker":true` nel JSON per identificare i file creati da noi
-- are_policies_active() controlla Chrome come campione + presenza del nostro JSON Firefox
-- Oggi e' Windows-only: nel branch `multios` il backend espone anche `is_browser_policy_supported()`
+- **Windows**: Chrome/Edge/Brave/Vivaldi/Opera/Chromium via registry `HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"`. Firefox via `distribution/policies.json`
+- **macOS**: Chromium browsers via plist in `/Library/Managed Preferences/`. Firefox via `distribution/policies.json`. Applicata silenziosamente al blocco/sblocco per forzare bypass immediato della DNS cache dei browser. Non persistono al reboot ma non serve: hosts persiste e la cache DNS e' vuota dopo il riavvio.
+- `is_browser_policy_supported()` ritorna true solo su Windows (la UI non mostra il layer policy su macOS)
+- Marker `"_youtubeblocker":true` nel JSON Firefox per identificare i file creati da noi
 
 ### Espansione domini
 - Input utente normalizzato: strip https://, www., m., path → root domain
@@ -126,15 +125,11 @@ Nel branch `multios` c'e' anche un primo flusso macOS con `osascript` per rilanc
   - Su Mac/Linux fallback a `dirs::data_local_dir()`
 
 ### Stato protezione per OS
-- `get_status()` nel branch `multios` espone anche:
-  - `os_name`
-  - `firewall_supported`
-  - `browser_policy_supported`
-- La UI deve distinguere tra:
-  - layer attivo
-  - layer disabilitato da config
-  - layer non disponibile su quell'OS
-- Su macOS v1, se `hosts` e' attivo e gli altri layer non sono supportati, la UI puo' comunque mostrare blocco valido, ma con nota esplicita `hosts-only`
+- `get_status()` espone `os_name`, `firewall_supported`, `browser_policy_supported`
+- La UI determina BLOCCATO/SBLOCCATO basandosi solo su `hosts_blocked`
+- Su Windows la UI mostra anche gli indicatori per firewall e browser policy
+- Su macOS la UI mostra solo BLOCCATO/SBLOCCATO senza dettagli layer
+- Startup: se hosts risulta bloccato, le liste restano attive; se hosts non e' bloccato, le liste vengono azzerate
 
 ## Comandi Tauri disponibili
 ```
@@ -159,8 +154,8 @@ check_pin(pin)           → Result<()>   // solo verifica, nessun side effect (
 - **Schedule**: blocco automatico per fascia oraria (es. 15:00-18:00 studio)
 - **System tray**: toggle rapido senza aprire la finestra principale
 - **Profili**: set di regole nominati (Studio, Lavoro, Weekend)
-- **Mac/Linux**: branch `multios` avvia una strategia pragmatica. macOS v1 utile = `hosts` + PIN + liste + stato coerente; firewall/policy restano futuri
-- **Toggle block_doh**: UI per abilitare/disabilitare firewall+policy separatamente dagli hosts
+- **Mac/Linux**: macOS funzionante con hosts + browser policy silenziosa. Linux da implementare.
+- **Toggle block_doh**: UI per abilitare/disabilitare firewall+policy separatamente dagli hosts (Windows)
 
 ## Gotcha e bug noti risolti
 - `tauri_build::Builder` non esiste in v2 → usare `tauri_build::build()`

@@ -12,7 +12,8 @@ Lo lanci, inserisci il PIN e selezioni la lista preimpostata da bloccare (video,
 Resterà bloccato fino a quando non riaprirai l'app e premi **SBLOCCA**.
 Puoi anche duplicare una lista e modificarla oppure crearne una nuova (per i siti per adulti per esempio).
 
-Agisce su tre livelli: **file hosts** + **regole firewall anti-DoH** + **policy browser** — nessun bypass possibile tramite DNS-over-HTTPS.
+Su **Windows** agisce su tre livelli: **file hosts** + **regole firewall anti-DoH** + **policy browser** — nessun bypass possibile tramite DNS-over-HTTPS.
+Su **macOS** blocca tramite **file hosts** con effetto immediato sui browser.
 
 Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 
@@ -20,13 +21,13 @@ Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 
 ## ✨ Caratteristiche
 
-- 🔒 **Blocco a tre livelli** — hosts, firewall DoH, policy browser
+- 🔒 **Blocco efficace** — hosts + firewall DoH + policy browser su Windows, hosts su macOS
 - 🔑 **PIN genitore** — hash argon2id, minimo 4 caratteri
 - 📚 **Liste di blocco** — preset per video, browser games, gaming platforms, chat, social e streaming + liste personalizzate
 - 🌐 **31 varianti per dominio** — blocca automaticamente www, m e 29 sottodomini locale (it, en, fr, de, ecc.)
 - 💾 **Blocco persistente** — resta attivo dopo chiusura app e riavvio PC/Mac
 - 🌍 **Italiano / Inglese** — toggle in header
-- 🖥️ **Windows + macOS** — blocco completo a tre livelli su entrambi
+- 🖥️ **Windows + macOS** — blocco persistente su entrambi
 
 ---
 
@@ -35,8 +36,8 @@ Richiede privilegi di amministratore. Protetto da PIN (argon2id).
 | Operazione | Cosa succede |
 |---|---|
 | **Apertura app** | Richiede password admin (macOS) o privilegi admin (Windows), poi PIN |
-| **Blocca** | Applica le liste attive: voci `127.0.0.1` e `::1` nel file hosts + regole firewall DoH + policy browser |
-| **Sblocca** | Richiede PIN → rimuove voci hosts + regole firewall + ripristina policy browser → flush DNS |
+| **Blocca** | Applica le liste attive: voci `127.0.0.1` e `::1` nel file hosts (+ firewall DoH e policy browser su Windows) |
+| **Sblocca** | Richiede PIN → rimuove voci hosts (+ regole firewall e policy browser su Windows) → flush DNS |
 
 Il blocco **persiste dopo la chiusura dell'app** e dopo il riavvio del PC/Mac.
 L'app non deve restare in esecuzione.
@@ -45,29 +46,25 @@ L'app non deve restare in esecuzione.
 
 ## 🛡️ Livelli di blocco
 
-| Livello | Windows | macOS |
-|---|---|---|
-| **🗂️ Hosts** | `127.0.0.1` + `::1` in `C:\Windows\System32\drivers\etc\hosts` | `127.0.0.1` + `::1` in `/etc/hosts` |
-| **🔥 Firewall DoH** | Regole `netsh` outbound TCP verso DoH noti (porta 443/853) | Regole `pfctl` (packet filter) verso DoH noti (porta 443/853) |
-| **🌐 Policy browser** | Registry `HKLM\SOFTWARE\Policies\...` per Chromium + `policies.json` per Firefox | Plist in `/Library/Managed Preferences/` per Chromium + `policies.json` per Firefox |
+### Windows — tre livelli
+
+| Livello | Dettaglio |
+|---|---|
+| **🗂️ Hosts** | `127.0.0.1` + `::1` in `C:\Windows\System32\drivers\etc\hosts` |
+| **🔥 Firewall DoH** | Regole `netsh` outbound TCP verso DoH noti (porta 443/853) |
+| **🌐 Policy browser** | Registry `HKLM\SOFTWARE\Policies\...` per Chromium + `policies.json` per Firefox |
 
 > I tre livelli insieme impediscono l'aggiramento tramite DNS-over-HTTPS,
 > sia a livello di sistema operativo che di singolo browser.
 
-### Browser con policy DoH gestita
+### macOS — hosts
 
-| Browser | Windows | macOS |
-|---|---|---|
-| Google Chrome | Registry | Managed Preferences plist |
-| Microsoft Edge | Registry | Managed Preferences plist |
-| Brave | Registry | Managed Preferences plist |
-| Vivaldi | Registry | Managed Preferences plist |
-| Opera / Opera GX | Registry | Managed Preferences plist |
-| Chromium | Registry | Managed Preferences plist |
-| Firefox | `policies.json` | `policies.json` |
+| Livello | Dettaglio |
+|---|---|
+| **🗂️ Hosts** | `127.0.0.1` + `::1` in `/etc/hosts` — persiste al riavvio |
 
-> Se il browser non è installato, l'operazione viene ignorata senza errori.
-> Hosts e firewall bloccano comunque il DNS per **qualsiasi** browser.
+> Il file hosts è sufficiente a bloccare qualsiasi browser, anche con DNS personalizzato.
+> Il blocco è immediato e non richiede che l'app resti in esecuzione.
 
 ---
 
@@ -160,14 +157,14 @@ YouTube-Blocker/
     │   ├── config.rs     — AppConfig, liste predefinite, sync, migration
     │   ├── auth.rs       — PIN con argon2id
     │   ├── hosts.rs      — blocco/sblocco file hosts + flush DNS (cross-platform)
-    │   ├── firewall.rs   — Windows: netsh | macOS: pfctl
-    │   └── browsers.rs   — Windows: registry | macOS: managed preferences plist
+    │   ├── firewall.rs   — Windows: regole netsh anti-DoH
+    │   └── browsers.rs   — Windows: registry | macOS: managed prefs plist (silente)
     └── src/
         ├── i18n.tsx              — traduzioni IT/EN
         ├── App.tsx               — routing tab, session lock, setup PIN
         ├── hooks/useBlocker.ts   — stato centralizzato, invoke Tauri
         └── components/
-            ├── StatusCard.tsx    — badge stato, indicatori per livello
+            ├── StatusCard.tsx    — badge stato BLOCCATO/SBLOCCATO
             ├── BlockLists.tsx    — preset e liste personalizzate, toggle, edit, duplica
             ├── PinModal.tsx      — modal setup e verifica PIN
             ├── Settings.tsx      — cambio PIN, reset PIN
