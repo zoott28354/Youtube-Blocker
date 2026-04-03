@@ -86,7 +86,7 @@ L'app non deve restare in esecuzione.
 
 ### macOS
 
-Installa tramite [Homebrew](https://brew.sh/):
+> **L'app non è firmata con certificato Apple Developer**, quindi macOS blocca l'apertura del .dmg scaricato direttamente. L'unico metodo di installazione supportato è tramite [Homebrew](https://brew.sh/).
 
 ```
 brew tap zoott28354/youtube-blocker
