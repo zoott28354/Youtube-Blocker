@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useBlocker } from "./hooks/useBlocker";
-import { useI18n, Lang } from "./i18n";
+import { useI18n, Lang, LANG_LABELS } from "./i18n";
 import StatusCard from "./components/StatusCard";
 import BlockLists from "./components/BlockLists";
 import PinModal from "./components/PinModal";
@@ -71,22 +71,20 @@ export default function App() {
               {blocker.error}
             </span>
           )}
-          {/* Language toggle */}
-          <div className="flex rounded-lg overflow-hidden border border-gray-700">
-            {(["it", "en"] as Lang[]).map((l) => (
-              <button
-                key={l}
-                onClick={() => setLang(l)}
-                className={`px-2.5 py-1 text-xs font-semibold uppercase transition-colors ${
-                  lang === l
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-400 hover:text-gray-200"
-                }`}
-              >
-                {l}
-              </button>
+          {/* Language selector */}
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value as Lang)}
+            className="bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-xs
+              font-semibold text-gray-300 uppercase cursor-pointer
+              focus:outline-none focus:border-blue-500"
+          >
+            {(Object.keys(LANG_LABELS) as Lang[]).map((l) => (
+              <option key={l} value={l}>
+                {LANG_LABELS[l]}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
       </header>
 
