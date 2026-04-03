@@ -1,7 +1,6 @@
 /// Disabilita/abilita il DNS-over-HTTPS nei principali browser via Group Policy.
 ///
 /// Windows: chiave registro HKLM\SOFTWARE\Policies\...\DnsOverHttpsMode = "off"
-/// macOS:   plist in /Library/Managed Preferences/<bundle_id>.plist
 /// Firefox: crea/rimuove distribution/policies.json nella cartella di installazione.
 ///
 /// Tutte le operazioni sono best-effort (il browser potrebbe non essere installato).
@@ -28,36 +27,6 @@ const FIREFOX_INSTALL_DIRS: &[&str] = &[
     r"C:\Program Files (x86)\Mozilla Firefox",
 ];
 
-// ─── Costanti macOS ─────────────────────────────────────────────────────────
-
-#[cfg(target_os = "macos")]
-const CHROMIUM_MANAGED_PREF_BUNDLES: &[&str] = &[
-    "com.google.Chrome",
-    "com.microsoft.Edge",
-    "com.brave.Browser",
-    "com.vivaldi.Vivaldi",
-    "com.operasoftware.Opera",
-    "org.chromium.Chromium",
-];
-
-#[cfg(target_os = "macos")]
-const MANAGED_PREFS_DIR: &str = "/Library/Managed Preferences";
-
-#[cfg(target_os = "macos")]
-const CHROMIUM_PLIST_CONTENT: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>DnsOverHttpsMode</key>
-    <string>off</string>
-</dict>
-</plist>"#;
-
-#[cfg(target_os = "macos")]
-const FIREFOX_INSTALL_DIRS: &[&str] = &[
-    "/Applications/Firefox.app/Contents/Resources",
-];
-
 // ─── Costanti condivise ─────────────────────────────────────────────────────
 
 /// Marker nel JSON per riconoscere il file creato da noi.
@@ -69,7 +38,7 @@ const FIREFOX_POLICY_JSON: &str =
 // ─── API pubblica ───────────────────────────────────────────────────────────
 
 pub fn is_browser_policy_supported() -> bool {
-    cfg!(target_os = "windows") || cfg!(target_os = "macos")
+    cfg!(target_os = "windows")
 }
 
 /// Verifica se almeno una policy browser è attiva (Chrome/Edge o Firefox).
@@ -100,27 +69,7 @@ pub fn are_policies_active() -> bool {
         return false;
     }
 
-    #[cfg(target_os = "macos")]
-    {
-        let plist_path = Path::new(MANAGED_PREFS_DIR)
-            .join(format!("{}.plist", CHROMIUM_MANAGED_PREF_BUNDLES[0]));
-        if let Ok(content) = std::fs::read_to_string(&plist_path) {
-            if content.contains("DnsOverHttpsMode") {
-                return true;
-            }
-        }
-        if let Some(dist_dir) = firefox_dist_dir() {
-            let policy_path = dist_dir.join("policies.json");
-            if let Ok(content) = std::fs::read_to_string(&policy_path) {
-                if content.contains(YOUTUBEBLOCKER_MARKER) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    #[cfg(not(target_os = "windows"))]
     false
 }
 
@@ -131,11 +80,6 @@ pub fn disable_browser_doh() {
         set_chromium_doh_windows(false);
         set_firefox_doh(false);
     }
-    #[cfg(target_os = "macos")]
-    {
-        set_chromium_doh_macos(false);
-        set_firefox_doh(false);
-    }
 }
 
 /// Ripristina le impostazioni DoH dei browser.
@@ -143,11 +87,6 @@ pub fn enable_browser_doh() {
     #[cfg(target_os = "windows")]
     {
         set_chromium_doh_windows(true);
-        set_firefox_doh(true);
-    }
-    #[cfg(target_os = "macos")]
-    {
-        set_chromium_doh_macos(true);
         set_firefox_doh(true);
     }
 }
@@ -175,35 +114,12 @@ fn set_chromium_doh_windows(allow: bool) {
     }
 }
 
-// ─── Chromium macOS (managed preferences plist) ─────────────────────────────
-
-#[cfg(target_os = "macos")]
-fn set_chromium_doh_macos(allow: bool) {
-    let managed_dir = Path::new(MANAGED_PREFS_DIR);
-    let _ = std::fs::create_dir_all(managed_dir);
-
-    for &bundle in CHROMIUM_MANAGED_PREF_BUNDLES {
-        let plist_path = managed_dir.join(format!("{}.plist", bundle));
-        if allow {
-            if let Ok(content) = std::fs::read_to_string(&plist_path) {
-                if content.contains("DnsOverHttpsMode") {
-                    let _ = std::fs::remove_file(&plist_path);
-                }
-            }
-        } else {
-            let _ = std::fs::write(&plist_path, CHROMIUM_PLIST_CONTENT);
-        }
-    }
-}
-
 // ─── Firefox (policies.json, cross-platform) ───────────────────────────────
 
 fn firefox_dist_dir() -> Option<PathBuf> {
     #[cfg(target_os = "windows")]
     let dirs = FIREFOX_INSTALL_DIRS;
-    #[cfg(target_os = "macos")]
-    let dirs = FIREFOX_INSTALL_DIRS;
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    #[cfg(not(target_os = "windows"))]
     let dirs: &[&str] = &[];
 
     for &dir in dirs {

@@ -460,7 +460,15 @@ fn main() {
     }
 
     let mut config = load_config().unwrap_or_default();
-    if !is_protection_active_for_config(&config).unwrap_or(false) {
+    // Controlla solo hosts per decidere se le liste sono ancora attive:
+    // hosts persiste al reboot, gli altri layer (firewall, policy) potrebbero no.
+    let sites = active_sites(&config);
+    let hosts_still_blocked = if sites.is_empty() {
+        has_block_section().unwrap_or(false)
+    } else {
+        is_blocked(&sites).unwrap_or(false)
+    };
+    if !hosts_still_blocked {
         let had_active_lists = config.lists.iter().any(|list| list.active);
         if had_active_lists {
             clear_active_lists(&mut config);
