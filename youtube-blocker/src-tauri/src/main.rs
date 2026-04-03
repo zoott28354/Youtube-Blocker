@@ -231,9 +231,7 @@ fn block_all(state: State<AppState>) -> Result<(), String> {
     if cfg.block_doh && is_firewall_supported() {
         add_firewall_rules().map_err(|e| e.to_string())?;
     }
-    if cfg.block_doh && is_browser_policy_supported() {
-        disable_browser_doh();
-    }
+    disable_browser_doh();
     Ok(())
 }
 
@@ -249,9 +247,7 @@ fn unblock_all(pin: String, state: State<AppState>) -> Result<(), String> {
     if cfg.block_doh && is_firewall_supported() {
         remove_firewall_rules().map_err(|e| e.to_string())?;
     }
-    if cfg.block_doh && is_browser_policy_supported() {
-        enable_browser_doh();
-    }
+    enable_browser_doh();
     clear_active_lists(&mut cfg);
     save_config(&cfg).map_err(|e| e.to_string())?;
     Ok(())
