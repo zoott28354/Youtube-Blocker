@@ -197,7 +197,13 @@ pub fn config_path() -> Result<PathBuf, ConfigError> {
             .unwrap_or_else(|_| "C:\\ProgramData".into());
         Ok(PathBuf::from(programdata).join("YouTubeBlocker").join("config.json"))
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
+    {
+        // /Library/Application Support/ (non ~/Library/) — condiviso tra tutti
+        // gli utenti macOS, scrivibile solo con privilegi admin.
+        Ok(PathBuf::from("/Library/Application Support/YouTubeBlocker/config.json"))
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let base = dirs::data_local_dir().ok_or(ConfigError::NoAppData)?;
         Ok(base.join("YouTubeBlocker").join("config.json"))

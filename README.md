@@ -179,7 +179,7 @@ YouTube-Blocker/
 ## 💾 Configurazione persistita
 
 - **Windows**: `%PROGRAMDATA%\YouTubeBlocker\config.json`
-- **macOS**: `~/Library/Application Support/YouTubeBlocker/config.json`
+- **macOS**: `/Library/Application Support/YouTubeBlocker/config.json`
 
 ```json
 {
