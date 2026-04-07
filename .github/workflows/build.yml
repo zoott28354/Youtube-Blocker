@@ -42,7 +42,17 @@ jobs:
           path: youtube-blocker/src-tauri/target/release/bundle/nsis/*.exe
 
   build-macos:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-latest
+            artifact: macos-dmg-arm64
+          - arch: x86_64
+            runner: macos-13
+            artifact: macos-dmg-x64
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,19 +68,20 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: youtube-blocker/src-tauri
+          key: ${{ matrix.arch }}
 
       - name: Install frontend dependencies
         working-directory: youtube-blocker
         run: npm ci
 
-      - name: Build Tauri (macOS)
+      - name: Build Tauri (macOS ${{ matrix.arch }})
         working-directory: youtube-blocker
         run: npx tauri build
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: macos-dmg
+          name: ${{ matrix.artifact }}
           path: youtube-blocker/src-tauri/target/release/bundle/dmg/*.dmg
 
   release:
@@ -92,5 +103,6 @@ jobs:
         with:
           files: |
             artifacts/windows-installer/*.exe
-            artifacts/macos-dmg/*.dmg
+            artifacts/macos-dmg-arm64/*.dmg
+            artifacts/macos-dmg-x64/*.dmg
           generate_release_notes: true

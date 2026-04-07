@@ -1,6 +1,6 @@
 [package]
 name = "youtube-blocker"
-version = "1.2.2"
+version = "1.2.3"
 edition = "2021"
 authors = ["zoott28354"]
 description = "App per bloccare siti web a livello di sistema con focus Windows e v1 macOS hosts-only"
