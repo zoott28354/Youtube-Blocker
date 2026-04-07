@@ -57,6 +57,16 @@ L'app non deve restare in esecuzione.
 
 > **L'app non è firmata con certificato Apple Developer**, quindi macOS blocca l'apertura del .dmg scaricato direttamente. L'unico metodo di installazione supportato è tramite [Homebrew](https://brew.sh/).
 
+**1. Installa Homebrew** (se non lo hai già). Apri il Terminale (`Cmd+Spazio` → "Terminale") e incolla:
+
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Ti chiederà la password di amministratore. Al termine segui le istruzioni a schermo per aggiungere `brew` al PATH (in genere due comandi `echo ... >> ~/.zprofile` ed `eval ...` mostrati dall'installer).
+
+**2. Installa YouTube Blocker:**
+
 ```
 brew tap zoott28354/youtube-blocker
 brew install --cask youtube-blocker

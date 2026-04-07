@@ -47,12 +47,12 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: macos-latest
+            target: aarch64-apple-darwin
             artifact: macos-dmg-arm64
           - arch: x86_64
-            runner: macos-13
+            target: x86_64-apple-darwin
             artifact: macos-dmg-x64
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -63,6 +63,8 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -76,13 +78,13 @@ jobs:
 
       - name: Build Tauri (macOS ${{ matrix.arch }})
         working-directory: youtube-blocker
-        run: npx tauri build
+        run: npx tauri build --target ${{ matrix.target }}
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: youtube-blocker/src-tauri/target/release/bundle/dmg/*.dmg
+          path: youtube-blocker/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
 
   release:
     needs: [build-windows, build-macos]
