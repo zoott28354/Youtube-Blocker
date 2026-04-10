@@ -1,15 +1,13 @@
-# YouTube Blocker — Contesto per Claude / Codex Mac
+# YouTube Blocker — Contesto per Claude
 
 ## Cosa fa questo progetto
-App desktop Tauri 2 per bloccare siti a livello di sistema.
+App desktop Tauri 2 per bloccare siti a livello di sistema su **Windows e macOS**.
 Usecase principale: genitore blocca YouTube (e altri siti) per un figlio di 11 anni.
-Su Windows il blocco usa tre livelli: file `hosts` + regole Windows Firewall anti-DoH + Group Policy browser.
-PIN argon2id richiesto per aprire l'app e per sbloccare. Interfaccia bilingue IT/EN.
+PIN argon2id richiesto per aprire l'app e per sbloccare. Interfaccia multilingua (IT/EN/ES/FR/DE/PT, auto-detect).
 
-### Stato branch `multios`
-- Windows: blocco completo a tre livelli (`hosts` + firewall anti-DoH + browser policy)
-- macOS: blocco tramite `hosts` + browser policy silenziosa (disabilita DoH nei browser per evitare ritardi da DNS cache). La UI mostra solo BLOCCATO/SBLOCCATO senza dettagli sui layer.
-- Linux e' secondario: stessa idea di macOS, ma non e' il focus immediato
+### Stato piattaforme (branch unico `main`)
+- **Windows**: blocco completo a tre livelli (`hosts` + firewall anti-DoH + browser policy)
+- **macOS**: blocco tramite `hosts` + browser policy silenziosa (disabilita DoH nei browser per evitare ritardi da DNS cache). La UI mostra solo BLOCCATO/SBLOCCATO senza dettagli sui layer.
 
 ## Stack
 - Tauri 2.x + React + TypeScript + Tailwind CSS
@@ -46,7 +44,7 @@ YouTube-Blocker/
 | `src-tauri/src/hosts.rs` | Lettura/scrittura file hosts + flush DNS multipiattaforma |
 | `src-tauri/src/firewall.rs` | Windows: regole netsh outbound TCP verso DoH su porte 443 e 853 (non usato su macOS) |
 | `src-tauri/src/browsers.rs` | Disabilita DoH nei browser. Windows: registry + policies.json. macOS: managed prefs plist + policies.json (silente, non mostrato in UI) |
-| `src/i18n.tsx` | Traduzioni IT/EN, LangProvider context, useI18n hook |
+| `src/i18n.tsx` | Traduzioni multilingua (IT/EN/ES/FR/DE/PT), LangProvider context, useI18n hook |
 | `src/hooks/useBlocker.ts` | Stato React centralizzato, tutti gli invoke Tauri |
 | `src/App.tsx` | Routing tab, session lock, setup PIN, toggle lingua |
 
@@ -56,7 +54,7 @@ YouTube-Blocker/
 Non usiamo manifest UAC (non supportato da tauri-build 2.5.x in tauri.conf.json).
 Admin check a runtime: `net session` su Windows. Se non admin → rilancio con
 `Start-Process -Verb RunAs` via PowerShell nascosto (CREATE_NO_WINDOW).
-Nel branch `multios` c'e' anche un primo flusso macOS con `osascript` per rilancio con privilegi admin.
+Su macOS: `osascript` per rilancio con privilegi admin (`do shell script ... with administrator privileges`).
 
 ### Session lock (PIN all'apertura)
 - All'apertura dell'app, se PIN è impostato, viene mostrata una schermata di verifica PIN
@@ -100,13 +98,13 @@ Nel branch `multios` c'e' anche un primo flusso macOS con `osascript` per rilanc
 
 ### i18n
 - Context React in src/i18n.tsx con traduzioni `as const`
+- 6 lingue: IT, EN, ES, FR, DE, PT — auto-detect dalla lingua di sistema, fallback EN
 - `type Translations = (typeof translations)[Lang]` per evitare errori di tipo con union
-- Lingua persistita in localStorage. Default: "it"
-- Toggle ITA/ENG in header (pill style)
+- Lingua persistita in localStorage
+- Dropdown in header con label abbreviate (ITA/ENG/ESP/FRA/DEU/POR)
 
 ### Build e distribuzione
 - Installer NSIS: `setup/build.bat` → `youtube-blocker/target/release/bundle/nsis/`
-- Portable exe: `setup/build_portable.bat` → `YouTubeBlocker_vX.X.X.exe` nella root
 - Bump versione: `setup/bump_version.bat` → aggiorna tauri.conf.json + Cargo.toml + package.json
 - Publisher: zoott28354 | License: MIT | Copyright © 2025 zoott28354
 - **installMode: "perMachine"** in tauri.conf.json → installa in `C:\Program Files` per tutti gli utenti
@@ -148,6 +146,7 @@ check_pin(pin)           → Result<()>   // solo verifica, nessun side effect (
 
 ## Preferenze utente
 - NON includere "Co-Authored-By: Claude Sonnet 4.6" nei commit
+- Avvisare SEMPRE l'utente se una modifica tocca codice platform-specific (#[cfg(target_os)]) o potrebbe non funzionare su uno dei due OS (Windows/macOS)
 
 ## Roadmap / Feature future
 - **Game Timer**: integrazione con un timer di gioco che blocca/sblocca automaticamente
@@ -177,5 +176,4 @@ check_pin(pin)           → Result<()>   // solo verifica, nessun side effect (
 setup\setup.bat           # prima volta: npm install + genera lancia.bat nella root
 lancia.bat                # avvia dev mode (generato da setup.bat, non in git)
 setup\build.bat           # installer NSIS
-setup\build_portable.bat  # portable exe
 ```
