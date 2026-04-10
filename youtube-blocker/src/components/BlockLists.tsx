@@ -333,7 +333,7 @@ export default function BlockLists({
           ) : (
             /* ── Modalità visualizzazione compatta ── */
             <div className="px-4 py-3">
-              {/* Riga 1: toggle + nome + conteggio + chevron */}
+              {/* Riga 1: toggle + nome + conteggio + azioni */}
               <div className="flex items-center gap-3">
                 {/* Toggle */}
                 <button
@@ -365,30 +365,8 @@ export default function BlockLists({
                   </span>
                 </div>
 
-                {/* Chevron espandi/comprimi */}
-                <button
-                  onClick={() => toggleExpand(list.id)}
-                  className="text-gray-500 hover:text-gray-300 transition-colors p-1 flex-shrink-0"
-                >
-                  <svg
-                    className={`w-4 h-4 transition-transform ${expandedId === list.id ? "rotate-180" : ""}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Riga 2: domini root (sempre visibile, compatta) */}
-              {list.sites.length > 0 && (
-                <div className="mt-1 ml-13 text-xs text-gray-500 truncate" style={{ marginLeft: "52px" }}>
-                  {rootDomains(list.sites).join(", ")}
-                </div>
-              )}
-
-              {/* Sezione espansa: azioni */}
-              {expandedId === list.id && (
-                <div className="mt-3 flex flex-wrap gap-2" style={{ marginLeft: "52px" }}>
+                {/* Azioni sempre visibili */}
+                <div className="flex items-center gap-1 flex-shrink-0">
                   {list.builtin ? (
                     <button
                       onClick={() => handleDuplicate(list)}
@@ -412,6 +390,39 @@ export default function BlockLists({
                       </button>
                     </>
                   )}
+                </div>
+              </div>
+
+              {/* Riga 2: chevron + anteprima domini root */}
+              {list.sites.length > 0 && (
+                <div
+                  className="mt-1 flex items-center gap-1 cursor-pointer"
+                  style={{ marginLeft: "52px" }}
+                  onClick={() => toggleExpand(list.id)}
+                >
+                  <svg
+                    className={`w-3 h-3 text-gray-500 transition-transform flex-shrink-0 ${expandedId === list.id ? "rotate-180" : ""}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                  <span className="text-xs text-gray-500 truncate">
+                    {rootDomains(list.sites).join(", ")}
+                  </span>
+                </div>
+              )}
+
+              {/* Sezione espansa: lista siti */}
+              {expandedId === list.id && list.sites.length > 0 && (
+                <div
+                  className="mt-2 space-y-0.5 max-h-40 overflow-y-auto"
+                  style={{ marginLeft: "52px" }}
+                >
+                  {rootDomains(list.sites).map((root) => (
+                    <div key={root} className="text-xs text-gray-400 py-0.5">
+                      {root}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
