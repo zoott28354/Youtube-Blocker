@@ -101,25 +101,6 @@ fn all_sites(cfg: &AppConfig) -> Vec<String> {
         .collect()
 }
 
-fn is_protection_active_for_config(cfg: &AppConfig) -> Result<bool, String> {
-    let sites = active_sites(cfg);
-    if sites.is_empty() {
-        return Ok(false);
-    }
-
-    let hosts_blocked = is_blocked(&sites).map_err(|e| e.to_string())?;
-    if !hosts_blocked {
-        return Ok(false);
-    }
-
-    if !cfg.block_doh {
-        return Ok(true);
-    }
-
-    let firewall_ok = !is_firewall_supported() || are_rules_active();
-    let browser_ok = !is_browser_policy_supported() || are_policies_active();
-    Ok(firewall_ok && browser_ok)
-}
 
 fn clear_active_lists(cfg: &mut AppConfig) {
     for list in &mut cfg.lists {
