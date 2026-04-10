@@ -3,12 +3,12 @@ import { createContext, useContext, useState, ReactNode } from "react";
 export type Lang = "it" | "en" | "es" | "fr" | "de" | "pt";
 
 export const LANG_LABELS: Record<Lang, string> = {
-  it: "Italiano",
-  en: "English",
-  es: "Español",
-  fr: "Français",
-  de: "Deutsch",
-  pt: "Português",
+  it: "ITA",
+  en: "ENG",
+  es: "ESP",
+  fr: "FRA",
+  de: "DEU",
+  pt: "POR",
 };
 
 export const translations = {

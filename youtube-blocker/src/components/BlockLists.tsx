@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { BlockList } from "../hooks/useBlocker";
 import { useI18n } from "../i18n";
 
@@ -83,7 +83,12 @@ export default function BlockLists({
   const [creating, setCreating] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const addInputRef = useRef<HTMLInputElement>(null);
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  }, []);
 
   function startEdit(list: BlockList) {
     setEditing({ id: list.id, name: list.name, sites: [...list.sites] });
@@ -326,14 +331,15 @@ export default function BlockLists({
               </div>
             </div>
           ) : (
-            /* ── Modalità visualizzazione ── */
+            /* ── Modalità visualizzazione compatta ── */
             <div className="px-4 py-3">
-              <div className="flex items-start gap-3">
+              {/* Riga 1: toggle + nome + conteggio + chevron */}
+              <div className="flex items-center gap-3">
                 {/* Toggle */}
                 <button
                   onClick={() => handleToggle(list.id, !list.active)}
                   disabled={blocked || toggling === list.id}
-                  className={`relative mt-0.5 h-6 w-10 rounded-full transition-colors flex-shrink-0 ${
+                  className={`relative h-6 w-10 rounded-full transition-colors flex-shrink-0 ${
                     list.active ? "bg-blue-600" : "bg-gray-700"
                   } ${blocked || toggling === list.id ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
@@ -344,57 +350,70 @@ export default function BlockLists({
                   />
                 </button>
 
-                {/* Nome + info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="text-sm font-semibold text-white break-words">
-                      {displayName(list)}
+                {/* Nome + badge + conteggio */}
+                <div className="flex-1 min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-sm font-semibold text-white truncate">
+                    {displayName(list)}
+                  </span>
+                  {list.builtin && (
+                    <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded whitespace-nowrap">
+                      {t.builtinBadge}
                     </span>
-                    {list.builtin && (
-                      <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded whitespace-nowrap">
-                        {t.builtinBadge}
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-600 whitespace-nowrap">
-                      {siteCount(list.sites)}
-                    </span>
-                  </div>
-
-                  {/* Domini root visibili sotto il nome */}
-                  {list.sites.length > 0 && (
-                    <div className="mt-1.5 text-xs text-gray-500 leading-relaxed break-words">
-                      {rootDomains(list.sites).join(", ")}
-                    </div>
                   )}
+                  <span className="text-xs text-gray-600 whitespace-nowrap">
+                    {siteCount(list.sites)}
+                  </span>
+                </div>
 
-                  {/* Azioni */}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {list.builtin ? (
+                {/* Chevron espandi/comprimi */}
+                <button
+                  onClick={() => toggleExpand(list.id)}
+                  className="text-gray-500 hover:text-gray-300 transition-colors p-1 flex-shrink-0"
+                >
+                  <svg
+                    className={`w-4 h-4 transition-transform ${expandedId === list.id ? "rotate-180" : ""}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Riga 2: domini root (sempre visibile, compatta) */}
+              {list.sites.length > 0 && (
+                <div className="mt-1 ml-13 text-xs text-gray-500 truncate" style={{ marginLeft: "52px" }}>
+                  {rootDomains(list.sites).join(", ")}
+                </div>
+              )}
+
+              {/* Sezione espansa: azioni */}
+              {expandedId === list.id && (
+                <div className="mt-3 flex flex-wrap gap-2" style={{ marginLeft: "52px" }}>
+                  {list.builtin ? (
+                    <button
+                      onClick={() => handleDuplicate(list)}
+                      className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
+                    >
+                      {t.duplicateList}
+                    </button>
+                  ) : (
+                    <>
                       <button
-                        onClick={() => handleDuplicate(list)}
+                        onClick={() => startEdit(list)}
                         className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
                       >
-                        {t.duplicateList}
+                        {t.editList}
                       </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => startEdit(list)}
-                          className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-800"
-                        >
-                          {t.editList}
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(list.id)}
-                          className="text-xs text-red-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-gray-800"
-                        >
-                          {t.deleteList}
-                        </button>
-                      </>
-                    )}
-                  </div>
+                      <button
+                        onClick={() => setConfirmDeleteId(list.id)}
+                        className="text-xs text-red-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-gray-800"
+                      >
+                        {t.deleteList}
+                      </button>
+                    </>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
